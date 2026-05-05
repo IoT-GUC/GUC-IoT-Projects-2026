@@ -1,0 +1,19 @@
+@import './base.css';
+@import "tailwindcss";
+
+input {
+    background-color: #1E293B88;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    padding: 16px;
+    width: 100%;
+    color: white;
+}
+
+input::placeholder {
+    color: #64748B;
+}
+
+button {
+    cursor: pointer;
+}

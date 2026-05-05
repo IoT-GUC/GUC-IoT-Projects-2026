@@ -1,0 +1,292 @@
+{
+    "version": "1.0",
+    "description": "API endpoints for managing and retrieving information about routers, devices, and records.",
+    "note": "All durations are in seconds.",
+    "keys description": {
+        "path": "The URL path for the API endpoint.",
+        "description": "A brief description of what the endpoint does.",
+        "response": "The expected response format for the endpoint."
+    },
+    "endpoints": [
+        {
+            "path": "/auth/signup",
+            "method": "POST",
+            "description": "Sign up a new hospital.",
+            "body": {
+                "hospital_id": "VarChar(255)",
+                "name": "VarChar(255)",
+                "address": "VarChar(255)",
+                "admin_name": "VarChar(255)",
+                "admin_email": "VarChar(255)",
+                "password": "VarChar"
+            }
+        },
+        {
+            "path": "/auth/login",
+            "method": "POST",
+            "description": "Log in to an existing hospital.",
+            "body": {
+                "hospital_id": "VarChar(255)",
+                "password": "VarChar"
+            }
+        },
+        {
+            "path": "/settings",
+            "method": "GET",
+            "description": "Get the hospital settings.",
+            "response": {
+                "hospital_id": "VarChar(255)",
+                "name": "VarChar(255)",
+                "address": "VarChar(255)",
+                "admin_name": "VarChar(255)",
+                "admin_email": "VarChar(255)"
+            }
+        },
+        {
+            "path": "/settings",
+            "method": "PUT",
+            "description": "Update the hospital settings.",
+            "body": {
+                "name": "VarChar(255)|Undefined",
+                "address": "VarChar(255)|Undefined",
+                "admin_name": "VarChar(255)|Undefined",
+                "admin_email": "VarChar(255)|Undefined",
+                "password": "VarChar|Undefined"
+            }
+        },
+        {
+            "path": "/settings/records",
+            "method": "DELETE",
+            "description": "Delete all patients info along with all records."
+        },
+        {
+            "path": "/settings/account",
+            "method": "DELETE",
+            "description": "Delete the account."
+        },
+        {
+            "path": "/settings/blueprint",
+            "method": "PUT",
+            "description": "Update the blueprint.",
+            "body": {
+                "image": "File"
+            }
+        },
+        {
+            "path": "/settings/blueprint",
+            "method": "GET",
+            "description": "Get the blueprint.",
+            "response": {
+                "url": "URL"
+            }
+        },
+        {
+            "path": "/routers",
+            "method": "POST",
+            "description": "Create a new router.",
+            "body": {
+                "router_id": "UUID",
+                "name": "VarChar(255)",
+                "location_x": "Float",
+                "location_y": "Float"
+            }
+        },
+        {
+            "path": "/routers",
+            "method": "GET",
+            "description": "Get a list of all routers.",
+            "response": {
+                "routers": [
+                    {
+                        "id": "UUID",
+                        "name": "VarChar(255)",
+                        "location_x": "Float",
+                        "location_y": "Float"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/routers/map",
+            "method": "GET",
+            "description": "Get a map of all routers with their locations and the count of connected devices.",
+            "response": {
+                "routers_map": [
+                    {
+                        "id": "UUID",
+                        "location_x": "Float",
+                        "location_y": "Float",
+                        "connected_devices_count": "Int"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/routers/{id}",
+            "method": "GET",
+            "description": "Get details of a specific router by its ID.",
+            "response": {
+                "router": {
+                    "id": "UUID",
+                    "name": "VarChar(255)",
+                    "location_x": "Float",
+                    "location_y": "Float"
+                }
+            }
+        },
+        {
+            "path": "/routers/{id}/devices",
+            "method": "GET",
+            "description": "Get a list of all devices connected to a specific router by its ID.",
+            "response": {
+                "devices": [
+                    {
+                        "id": "UUID",
+                        "name": "VarChar(255)",
+                        "holder_name": "VarChar(255)",
+                        "last_record_timestamp": "Timestamp",
+                        "router_id": "UUID",
+                        "router_name": "VarChar(255)"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/routers/{id}/hourly-sessions-duration",
+            "method": "GET",
+            "description": "Get the number of connected devices and the average session duration for a specific router by its ID.",
+            "response": {
+                "hourly_sessions": [
+                    {
+                        "router_id": "UUID",
+                        "hour": "Timestamp",
+                        "sessions_count": "Int",
+                        "average_session_duration": "Int"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/devices",
+            "method": "POST",
+            "description": "Create a new device.",
+            "body": {
+                "device_id": "UUID",
+                "name": "VarChar(255)"
+            }
+        },
+        {
+            "path": "/devices",
+            "method": "GET",
+            "description": "Get a list of all devices.",
+            "response": {
+                "devices": [
+                    {
+                        "id": "UUID",
+                        "name": "VarChar(255)",
+                        "patient_id": "UUID|Null"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/devices/with-routers-info",
+            "method": "GET",
+            "description": "Get a list of all devices with their router information.",
+            "response": {
+                "devices": [
+                    {
+                        "id": "UUID",
+                        "name": "VarChar(255)",
+                        "holder_name": "VarChar(255)",
+                        "last_record_timestamp": "Timestamp",
+                        "router_id": "UUID",
+                        "router_name": "VarChar(255)"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/devices/{id}/release",
+            "method": "PUT",
+            "description": "Release device holder."
+        },
+        {
+            "path": "/records/hourly-records",
+            "method": "GET",
+            "description": "Get the number of records created each hour.",
+            "response": {
+                "records_hourly": [
+                    {
+                        "hour": "Timestamp",
+                        "records_count": "Int"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/patients",
+            "method": "POST",
+            "description": "Create a new patient.",
+            "body": {
+                "device_id": "UUID",
+                "name": "VarChar(255)"
+            }
+        },
+        {
+            "path": "/patients",
+            "method": "GET",
+            "description": "Get a list of all patients.",
+            "response": {
+                "patients": [
+                    {
+                        "id": "UUID",
+                        "name": "VarChar(255)"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/patients/{id}/sessions",
+            "method": "GET",
+            "description": "Get a list of all sessions for a specific patient by its ID.",
+            "response": {
+                "patient_sessions": [
+                    {
+                        "patient_id": "UUID",
+                        "router_id": "UUID",
+                        "router_name": "VarChar(255)",
+                        "start_time": "Timestamp",
+                        "duration": "Int"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/records/hourly-patients",
+            "method": "GET",
+            "description": "Get the number of unique patients that created records each hour.",
+            "response": {
+                "records_hourly": [
+                    {
+                        "hour": "Timestamp",
+                        "patients_count": "Int"
+                    }
+                ]
+            }
+        },
+        {
+            "path": "/records/hourly-sessions-duration",
+            "method": "GET",
+            "description": "Get the average total session duration for each hour.",
+            "response": {
+                "hourly_sessions": [
+                    {
+                        "hour": "Timestamp",
+                        "average_total_session_duration": "Int"
+                    }
+                ]
+            }
+        }
+    ]
+}
