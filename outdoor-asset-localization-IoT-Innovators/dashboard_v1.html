@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Outdoor Asset Localization Dashboard</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      color: #111827;
+    }
+
+    header {
+      background: #1f2937;
+      color: white;
+      padding: 16px 24px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .container {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    #map {
+      height: 80vh;
+      flex: 2;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .panel {
+      flex: 1;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .field {
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .label {
+      font-weight: bold;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+
+    .value {
+      color: #111827;
+    }
+
+    .status-ok {
+      color: green;
+      font-weight: bold;
+    }
+
+    .status-bad {
+      color: red;
+      font-weight: bold;
+    }
+
+    .status-stale {
+      color: orange;
+      font-weight: bold;
+    }
+
+    .top-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: bold;
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .badge-live {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-stale {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .small-note {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+
+    select {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>Outdoor Asset Localization Dashboard</header>
+
+  <div class="container">
+    <div id="map"></div>
+
+    <div class="panel">
+      <div class="top-info">
+        <h2 style="margin: 0;">Latest Asset Status</h2>
+        <select id="assetSelector"></select>
+      </div>
+
+      <div class="field">
+        <div class="label">Asset Status</div>
+        <div class="value">
+          <span id="assetStatusBadge" class="badge">Loading...</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="label">Device ID</div>
+        <div class="value" id="deviceId">Loading...</div>
+      </div>
+
+      <div class="field">
+        <div class="label">GPS Fix</div>
+        <div class="value" id="fix">Loading...</div>
+      </div>
+
+      <div class="field">
+        <div class="label">Latitude</div>
+        <div class="value" id="latitude">Loading...</div>
+      </div>
+
+      <div class="field">
+        <div class="label">Longitude</div>
+        <div class="value" id="longitude">Loading...</div>
+      </div>
+
+      <div class="field">
+        <div class="label">UTC Timestamp</div>
+        <div class="value" id="timestampUtc">Loading...</div>
+      </div>
+
+      <div class="field">
+        <div class="label">Satellites</div>
+        <div class="value" id="satellites">Loading...</div>
+      </div>
+
+      <div class="field">
+        <div class="label">HDOP</div>
+        <div class="value" id="hdop">Loading...</div>
+      </div>
+
+      <div class="field">
+        <div class="label">RSSI</div>
+        <div class="value" id="rssi">Loading...</div>
+      </div>
+
+      <div class="field">
+        <div class="label">Received At</div>
+        <div class="value" id="receivedAt">Loading...</div>
+      </div>
+
+      <div class="field">
+        <div class="label">Last Refresh</div>
+        <div class="value" id="lastRefresh">Loading...</div>
+      </div>
+
+      <div class="small-note" id="noteBox">
+        Waiting for live updates...
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    const FIREBASE_DB_URL = "https://outdoor-asset-localization-default-rtdb.firebaseio.com";
+
+    const map = L.map("map").setView([29.9922, 31.5552], 16);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    const assetSelector = document.getElementById("assetSelector");
+
+    let markers = {};
+    let assetsCache = {};
+    let selectedDeviceId = null;
+
+    function formatNow() {
+      return new Date().toLocaleString();
+    }
+
+    function parseDateSafe(value) {
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function isStale(receivedAt) {
+      const d = parseDateSafe(receivedAt);
+      if (!d) return true;
+
+      const now = new Date();
+      const diffSeconds = (now - d) / 1000;
+      return diffSeconds > 15;
+    }
+
+    function updateSelector(assets) {
+      const ids = Object.keys(assets);
+
+      if (assetSelector.options.length !== ids.length) {
+        assetSelector.innerHTML = "";
+        ids.forEach(id => {
+          const option = document.createElement("option");
+          option.value = id;
+          option.textContent = id;
+          assetSelector.appendChild(option);
+        });
+      }
+
+      if (!selectedDeviceId && ids.length > 0) {
+        selectedDeviceId = ids[0];
+      }
+
+      if (selectedDeviceId) {
+        assetSelector.value = selectedDeviceId;
+      }
+    }
+
+    function updateInfoPanel(data) {
+      document.getElementById("deviceId").textContent = data.deviceId ?? "N/A";
+
+      const fixElement = document.getElementById("fix");
+      if (data.fix === 1) {
+        fixElement.textContent = "Valid Fix";
+        fixElement.className = "value status-ok";
+      } else {
+        fixElement.textContent = "No Fix";
+        fixElement.className = "value status-bad";
+      }
+
+      document.getElementById("latitude").textContent =
+        data.latitude != null ? data.latitude : "N/A";
+
+      document.getElementById("longitude").textContent =
+        data.longitude != null ? data.longitude : "N/A";
+
+      document.getElementById("timestampUtc").textContent =
+        data.timestampUtc ?? "N/A";
+
+      document.getElementById("satellites").textContent =
+        data.satellites != null ? data.satellites : "N/A";
+
+      document.getElementById("hdop").textContent =
+        data.hdop != null ? data.hdop : "N/A";
+
+      document.getElementById("rssi").textContent =
+        data.rssi != null ? data.rssi : "N/A";
+
+      document.getElementById("receivedAt").textContent =
+        data.receivedAt ?? "N/A";
+
+      document.getElementById("lastRefresh").textContent = formatNow();
+
+      const badge = document.getElementById("assetStatusBadge");
+      const noteBox = document.getElementById("noteBox");
+
+      if (data.fix !== 1) {
+        badge.textContent = "No GPS Fix";
+        badge.className = "badge";
+        noteBox.textContent = "This asset does not currently have a valid GPS fix.";
+      } else if (isStale(data.receivedAt)) {
+        badge.textContent = "Stale Data";
+        badge.className = "badge badge-stale";
+        noteBox.textContent = "Latest data looks delayed. Receiver/backend may not be updating.";
+      } else {
+        badge.textContent = "Live";
+        badge.className = "badge badge-live";
+        noteBox.textContent = "Asset data is updating normally.";
+      }
+    }
+
+    function updateMarker(deviceId, latest) {
+      if (latest.latitude == null || latest.longitude == null) return;
+
+      if (!markers[deviceId]) {
+        markers[deviceId] = L.marker([latest.latitude, latest.longitude]).addTo(map);
+
+        markers[deviceId].on("click", () => {
+          selectedDeviceId = deviceId;
+          assetSelector.value = deviceId;
+          updateInfoPanel(latest);
+        });
+      } else {
+        markers[deviceId].setLatLng([latest.latitude, latest.longitude]);
+      }
+
+      const popupText = `
+        <b>${deviceId}</b><br>
+        Fix: ${latest.fix === 1 ? "Valid" : "No Fix"}<br>
+        Lat: ${latest.latitude}<br>
+        Lng: ${latest.longitude}<br>
+        UTC: ${latest.timestampUtc ?? "N/A"}
+      `;
+
+      markers[deviceId].bindPopup(popupText);
+    }
+
+    async function loadAllAssets() {
+      try {
+        const response = await fetch(`${FIREBASE_DB_URL}/assets.json`);
+        const assets = await response.json();
+
+        if (!assets) {
+          console.log("No assets found.");
+          return;
+        }
+
+        assetsCache = assets;
+        updateSelector(assets);
+
+        for (const deviceId in assets) {
+          const latest = assets[deviceId]?.latest;
+          if (!latest) continue;
+
+          updateMarker(deviceId, latest);
+        }
+
+        if (selectedDeviceId && assets[selectedDeviceId]?.latest) {
+          updateInfoPanel(assets[selectedDeviceId].latest);
+
+          const latest = assets[selectedDeviceId].latest;
+          if (latest.latitude != null && latest.longitude != null) {
+            map.setView([latest.latitude, latest.longitude], 17);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load assets:", error);
+        document.getElementById("noteBox").textContent =
+          "Failed to load data from Firebase.";
+      }
+    }
+
+    assetSelector.addEventListener("change", () => {
+      selectedDeviceId = assetSelector.value;
+      if (assetsCache[selectedDeviceId]?.latest) {
+        const latest = assetsCache[selectedDeviceId].latest;
+        updateInfoPanel(latest);
+
+        if (latest.latitude != null && latest.longitude != null) {
+          map.setView([latest.latitude, latest.longitude], 17);
+        }
+      }
+    });
+
+    loadAllAssets();
+    setInterval(loadAllAssets, 5000);
+  </script>
+</body>
+</html>
