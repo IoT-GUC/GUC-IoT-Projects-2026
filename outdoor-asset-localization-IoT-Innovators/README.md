@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-This project implements an IoT-based outdoor asset localization system using a **NEO-6M GPS module** and **two LILYGO TTGO LoRa32 boards**.
+This project implements an IoT-based outdoor asset localization system using a **NEO-6M GPS module** and **LILYGO TTGO LoRa32 boards**.
 
-The goal is to track outdoor assets such as campus shuttles, construction equipment, or delivery vehicles by acquiring live GPS coordinates from a sender node, transmitting them wirelessly using **LoRa**, storing the received data in **Firebase Realtime Database**, and displaying the latest asset locations on a web dashboard.
+The system tracks outdoor assets by collecting live GPS coordinates from a sender node, transmitting them wirelessly using **LoRa**, forwarding the received data through **WiFi/MQTT**, storing it in **Firebase Realtime Database**, and displaying the latest asset location on a web dashboard.
 
-This project is built as a low-cost academic prototype for **NETW1010: Internet of Things**.
+This project is developed as an academic IoT prototype for **NETW1010: Internet of Things**.
 
 ---
 
@@ -25,7 +25,7 @@ This project is built as a low-cost academic prototype for **NETW1010: Internet 
 
 ---
 
-## System Flow
+## Current System Flow
 
 ```text
 NEO-6M GPS Module
@@ -34,251 +34,265 @@ TTGO LoRa32 Sender
         ↓
 LoRa Wireless Communication
         ↓
-TTGO LoRa32 Receiver
+TTGO LoRa32 Receiver / Gateway
         ↓
-Python Serial-to-Firebase Bridge
+WiFi + MQTT
+        ↓
+MQTT to Firebase Bridge
         ↓
 Firebase Realtime Database
         ↓
-Web Dashboard with Map
+Web Dashboard
 ```
 
 ---
 
-## Full System Architecture
+## System Architecture
 
 ### 1. Sensing Layer
 
-The **NEO-6M GPS module** collects outdoor location data and sends NMEA GPS sentences to the ESP32 through UART.
+The **NEO-6M GPS module** collects live outdoor location data and sends GPS information to the ESP32 sender board through UART.
 
-### 2. Edge Processing Layer
+### 2. Sender Node
 
-The **TTGO LoRa32 sender board** reads GPS data, checks whether a valid GPS fix exists, extracts location information, formats it into a structured payload, and transmits it over LoRa.
+The **TTGO LoRa32 sender** reads GPS data, checks the GPS fix status, builds a structured payload, and transmits it through LoRa.
 
-### 3. Wireless Communication Layer
+A **No-OLED sender version** was added to reduce unnecessary power consumption. The OLED screen is not required for normal tracking operation, so the sender now depends on Serial Monitor only for debugging.
 
-The sender and receiver communicate using direct **LoRa communication**. This is used as the core communication method for testing and demonstration.
+### 3. LoRa Communication Layer
 
-### 4. Receiver / Ingestion Layer
+The sender and receiver communicate using direct **LoRa communication**. LoRa is used because it is suitable for long-range, low-power IoT communication.
 
-The **TTGO LoRa32 receiver board** receives LoRa packets, parses the payload, and prints structured readings to the Serial Monitor.
+### 4. Receiver / Gateway Layer
 
-A Python bridge script reads this serial output and sends valid records to Firebase.
+The **TTGO LoRa32 receiver** receives LoRa packets from the sender.
+
+In Week 2, the receiver output was read through the USB COM port using a Python serial bridge.
+
+In the updated Week 3 implementation, the receiver acts as a **LoRa-to-WiFi/MQTT gateway**. It receives LoRa packets, parses them, converts them into JSON, and publishes them to an MQTT broker over WiFi.
 
 ### 5. Backend Layer
 
-**Firebase Realtime Database** stores the latest location for each asset and keeps a history of received location records.
+The backend uses **Firebase Realtime Database** to store:
 
-### 6. User Interface Layer
+- latest asset location
+- historical location records
+- GPS fix status
+- RSSI
+- satellite count
+- timestamp
+- gateway information
 
-A web dashboard displays asset locations on a map using **Leaflet.js** and **OpenStreetMap** tiles. The dashboard supports live refresh, asset selection, multiple markers, status indicators, coordinates, timestamps, and basic error handling.
+### 6. Dashboard Layer
+
+The dashboard uses **HTML, CSS, JavaScript, Leaflet.js, and OpenStreetMap** to display the asset location on a map.
+
+The dashboard reads from Firebase and shows:
+
+- current asset location
+- GPS fix status
+- latitude and longitude
+- UTC timestamp
+- RSSI
+- satellites
+- HDOP
+- received time
+- live/stale status
 
 ---
 
 ## Hardware Used
 
-- 1 × NEO-6M GPS module
-- 2 × LILYGO TTGO LoRa32 boards
-  - one board as sender
-  - one board as receiver
+- NEO-6M GPS module
+- LILYGO TTGO LoRa32 board as sender
+- LILYGO TTGO LoRa32 board as receiver/gateway
 - Female-to-female jumper wires
 - USB data cables
-- Laptop for Arduino programming, testing, dashboard viewing, and serial bridge execution
+- Laptop for programming, testing, and dashboard viewing
 
 ---
 
-## Software Used
+## Technologies Used
 
-- Arduino IDE
-- ESP32 board package
-- TinyGPSPlus Arduino library
-- LoRa Arduino library
+### Embedded / IoT
+
+- ESP32
+- TTGO LoRa32
+- NEO-6M GPS
+- LoRa communication
+- WiFi
+- MQTT
+
+### Arduino Libraries
+
+- TinyGPSPlus
+- LoRa
+- PubSubClient
+- ArduinoJson
+
+### Backend
+
 - Python 3
-- PySerial
-- Requests
+- requests
+- paho-mqtt
 - Firebase Realtime Database
-- HTML, CSS, and JavaScript
+
+### Frontend
+
+- HTML
+- CSS
+- JavaScript
 - Leaflet.js
-- OpenStreetMap tiles
+- OpenStreetMap
 
 ---
 
 ## Repository Structure
 
 ```text
-Outdoor-Asset-Localization/
+outdoor-asset-localization-IoT-Innovators/
+│
+├── README.md
 │
 ├── firmware/
 │   ├── Sender_v1.0/
 │   │   └── Sender_v1.0.ino
 │   │
-│   └── Receiver_v1.0/
-│       └── Receiver_v1.0.ino
+│   ├── Sender_NoOLED_v1.0/
+│   │   └── Sender_NoOLED_v1.0.ino
+│   │
+│   ├── Receiver_v1.0/
+│   │   └── Receiver_v1.0.ino
+│   │
+│   └── Receiver_MQTT_v1.0/
+│       └── Receiver_MQTT_v1.0.ino
 │
-├── docs_week_1/
-│   ├── backend-schema.md
-│   ├── payload-format.md
-│   ├── week-1-test-log.md
-│   └── wiring-reference.md
+├── backend/
+│   ├── serial_to_firebase.py
+│   ├── mqtt_to_firebase.py
+│   └── requirements.txt
 │
-├── docs_week_2/
-│   └── week2-test-log.md
+├── dashboard/
+│   └── dashboard_v1.html
 │
-├── evidence_week_1/
-│   ├── firebase-initial-schema.png
-│   ├── Receiver_Serial_Monitor_Output.png
-│   └── Sender_Serial_Monitor_Output.png
+├── docs/
+│   ├── week_1/
+│   │   ├── backend-schema.md
+│   │   ├── payload-format.md
+│   │   ├── week-1-test-log.md
+│   │   └── wiring-reference.md
+│   │
+│   ├── week_2/
+│   │   └── week2-test-log.md
+│   │
+│   └── week_3/
+│       └── mqtt-integration.md
 │
-├── evidence_week_2/
-│   ├── dashboard-multi-asset.png
-│   ├── dashboard-no-fix.png
-│   ├── dashboard-stale-data.png
-│   ├── dashboard-v1-live.png
-│   ├── firebase-live-data_history.png
-│   ├── firebase-live-data_latest.png
-│   └── python-bridge-terminal.png
+├── evidence/
+│   ├── week_1/
+│   │   ├── firebase-initial-schema.png
+│   │   ├── Receiver_Serial_Monitor_Output.png
+│   │   └── Sender_Serial_Monitor_Output.png
+│   │
+│   ├── week_2/
+│   │   ├── dashboard-multi-asset.png
+│   │   ├── dashboard-no-fix.png
+│   │   ├── dashboard-stale-data.png
+│   │   ├── dashboard-v1-live.png
+│   │   ├── firebase-live-data_history.png
+│   │   ├── firebase-live-data_latest.png
+│   │   └── python-bridge-terminal.png
+│   │
+│   └── week_3/
+│       ├── mqtt-receiver-serial.png
+│       ├── mqtt-to-firebase-bridge.png
+│       ├── firebase-latest-mqtt.png
+│       ├── firebase-history-mqtt.png
+│       └── dashboard-mqtt-live.png
 │
-├── dashboard_v1.html
-├── serial_to_firebase.py
-├── requirements.txt
-└── README.md
-```
-
----
-
-## Week 1 Status
-
-### Objective
-
-Make the embedded system stable and document the hardware setup for demonstration.
-
-### Week 1 Deliverables Completed
-
-- Stable sender firmware created.
-- Stable receiver firmware created.
-- GPS module connected to TTGO LoRa32 sender.
-- LoRa sender-to-receiver communication tested.
-- Payload format documented.
-- Wiring reference documented.
-- Outdoor GPS-to-LoRa testing performed.
-- Serial Monitor screenshots collected.
-- Firebase selected as backend.
-- Initial backend schema created.
-
-### Week 1 Files
-
-```text
-firmware/Sender_v1.0/Sender_v1.0.ino
-firmware/Receiver_v1.0/Receiver_v1.0.ino
-docs_week_1/wiring-reference.md
-docs_week_1/payload-format.md
-docs_week_1/week-1-test-log.md
-docs_week_1/backend-schema.md
-evidence_week_1/
-```
-
----
-
-## Week 2 Status
-
-### Objective
-
-Create the first complete software view of the system by storing and displaying location data.
-
-### Week 2 Deliverables Completed
-
-- Python serial-to-Firebase bridge implemented.
-- Receiver output connected to backend storage path.
-- Firebase stores latest asset location.
-- Firebase stores historical received records.
-- Dashboard v1 created using Leaflet.js and OpenStreetMap.
-- Dashboard displays current asset position on a map.
-- Dashboard supports multiple assets.
-- Dashboard supports asset selection.
-- Dashboard displays latitude, longitude, timestamp, RSSI, satellites, and GPS fix status.
-- Dashboard refreshes automatically.
-- Edge cases tested:
-  - missing GPS fix
-  - delayed or stale data
-  - invalid payloads
-  - multiple asset IDs
-
-### Week 2 Files
-
-```text
-serial_to_firebase.py
-dashboard_v1.html
-docs_week_2/week2-test-log.md
-evidence_week_2/
+├── presentation/
+│   └── IoT_Innovators_Presentation.pdf
+│
+├── references/
+│   └── references.md
+│
+└── diagrams/
+    └── system-architecture.png
 ```
 
 ---
 
 ## Firmware Files
 
-### Sender Firmware
+### Sender v1.0
 
 ```text
 firmware/Sender_v1.0/Sender_v1.0.ino
 ```
 
-The sender node:
+This is the original sender firmware. It reads GPS data, sends LoRa packets, and uses the onboard OLED for local display.
 
-- reads live GPS data from the NEO-6M module
-- checks whether a valid GPS fix exists
-- extracts coordinates and GPS status values
-- builds a structured LoRa payload
-- transmits the payload periodically over LoRa
+### Sender No-OLED v1.0
 
-### Receiver Firmware
+```text
+firmware/Sender_NoOLED_v1.0/Sender_NoOLED_v1.0.ino
+```
+
+This is the updated low-power sender version.
+
+It performs the same core function as the original sender:
+
+```text
+GPS → TTGO Sender → LoRa transmission
+```
+
+However, the OLED code was removed to reduce unnecessary power usage.
+
+The sender still prints debug information to Serial Monitor during testing.
+
+### Receiver v1.0
 
 ```text
 firmware/Receiver_v1.0/Receiver_v1.0.ino
 ```
 
-The receiver node:
+This is the Week 2 receiver firmware. It receives LoRa packets and prints the parsed output to Serial Monitor.
 
-- listens for incoming LoRa packets
-- reads received payloads
-- parses each field
-- prints structured output to the Serial Monitor
-- displays RSSI for link quality monitoring
+Receiver validation in Week 2 was completed using Serial Monitor output instead of OLED because OLED initialization on the receiver caused watchdog reset issues.
 
----
+### Receiver MQTT v1.0
 
-## Wiring Reference
+```text
+firmware/Receiver_MQTT_v1.0/Receiver_MQTT_v1.0.ino
+```
 
-### GPS to TTGO LoRa32 Sender
+This is the updated Week 3 receiver/gateway firmware.
 
-| GPS Pin | TTGO LoRa32 Sender Pin | Purpose |
-|---|---|---|
-| VCC | 5V | Powers the GPS module |
-| GND | GND | Common ground |
-| TXD | GPIO34 | Sends GPS serial data to ESP32 |
-| RXD | Not connected | Not required in current implementation |
+It performs the following:
 
-### Wiring Notes
-
-- The GPS module sends serial data through **TXD**.
-- The ESP32 listens on **GPIO34**.
-- GPS RXD is not required because the current implementation only reads from the GPS module.
-- The GPS patch antenna should face upward toward the sky during outdoor testing.
-- Both TTGO boards are powered through USB during development.
+1. Connects to WiFi.
+2. Connects to an MQTT broker.
+3. Initializes LoRa.
+4. Receives LoRa packets from the sender.
+5. Parses the CSV payload.
+6. Converts the payload to JSON.
+7. Publishes the JSON message to MQTT.
+8. Prints debug output to Serial Monitor.
 
 ---
 
 ## Payload Format
 
-### Current Payload Structure
+The sender transmits the following CSV payload through LoRa:
 
 ```text
 deviceID,fix,latitude,longitude,timestamp_utc,satellites,hdop,uptime
 ```
 
-### Example Payload
+Example:
 
 ```text
-asset001,1,30.044420,31.235712,12:35:42,6,1.20,15430
+ASSET-01,1,29.992221,31.555294,2026-05-12T17:54:49Z,5,2.0,2523
 ```
 
 ### Payload Fields
@@ -286,122 +300,221 @@ asset001,1,30.044420,31.235712,12:35:42,6,1.20,15430
 | Field | Description |
 |---|---|
 | deviceID | Unique asset/device identifier |
-| fix | GPS fix status, where 1 means valid and 0 means invalid |
+| fix | GPS fix status, where 1 means valid fix and 0 means invalid fix |
 | latitude | GPS latitude |
 | longitude | GPS longitude |
-| timestamp_utc | UTC time from GPS |
+| timestamp_utc | UTC timestamp from GPS |
 | satellites | Number of satellites detected |
 | hdop | Horizontal dilution of precision |
-| uptime | Device uptime in milliseconds |
+| uptime | Device uptime in seconds |
 
 ---
 
-## Backend
+## MQTT Integration
 
-The project uses **Firebase Realtime Database** as the backend for the current prototype.
+### MQTT Purpose
 
-### Database Purpose
+MQTT was added to improve the Week 2 architecture by removing the dependency on the receiver USB COM port for sending data to the backend.
 
-Firebase stores:
+In Week 2, the receiver printed data to Serial Monitor, and a Python script read that data from the COM port.
 
-- latest location per asset
-- historical location records
-- GPS fix status
-- RSSI value
-- satellite count
-- timestamp
-- update time
+In the updated architecture, the receiver publishes data directly over WiFi using MQTT.
 
-### Example Firebase Structure
+---
+
+## Correct MQTT Architecture
+
+```text
+Sender = GPS + LoRa only
+Receiver = LoRa + WiFi + MQTT gateway
+```
+
+The sender still sends data using LoRa.  
+The receiver receives LoRa data and forwards it using WiFi/MQTT.
+
+Correct explanation:
+
+```text
+The receiver receives data through LoRa and forwards it through WiFi using MQTT.
+```
+
+Incorrect explanation:
+
+```text
+LoRa sends data through WiFi.
+```
+
+---
+
+## MQTT Broker
+
+The current test implementation uses the public HiveMQ broker:
+
+```text
+broker.hivemq.com
+```
+
+Port:
+
+```text
+1883
+```
+
+This is used for academic testing. A production system should use a private or authenticated MQTT broker.
+
+---
+
+## MQTT Topics
+
+### Main Asset Topic
+
+```text
+iot-innovators/assets/all
+```
+
+All asset location messages are published to this topic.
+
+### Per-Asset Topic
+
+```text
+iot-innovators/assets/<deviceID>/location
+```
+
+Example:
+
+```text
+iot-innovators/assets/ASSET-01/location
+```
+
+### Gateway Status Topic
+
+```text
+iot-innovators/gateway/status
+```
+
+Used to publish receiver gateway status.
+
+### Gateway Debug Topic
+
+```text
+iot-innovators/gateway/debug
+```
+
+Used to publish invalid packet/debug messages.
+
+---
+
+## MQTT JSON Payload
+
+The receiver converts the LoRa CSV payload into JSON before publishing it to MQTT.
+
+Example:
 
 ```json
 {
-  "assets": {
-    "asset001": {
-      "latest": {
-        "deviceID": "asset001",
-        "fix": 1,
-        "latitude": 30.04442,
-        "longitude": 31.235712,
-        "timestamp_utc": "12:35:42",
-        "satellites": 6,
-        "hdop": 1.2,
-        "uptime": 15430,
-        "rssi": -72,
-        "updated_at": "2026-05-06T12:35:42Z"
-      },
-      "history": {
-        "record_id": {
-          "deviceID": "asset001",
-          "fix": 1,
-          "latitude": 30.04442,
-          "longitude": 31.235712,
-          "timestamp_utc": "12:35:42",
-          "satellites": 6,
-          "hdop": 1.2,
-          "uptime": 15430,
-          "rssi": -72,
-          "updated_at": "2026-05-06T12:35:42Z"
-        }
-      }
-    }
-  }
+  "deviceID": "ASSET-01",
+  "fix": 1,
+  "latitude": 29.99222,
+  "longitude": 31.55529,
+  "timestamp_utc": "2026-05-12T17:54:49Z",
+  "satellites": 5,
+  "hdop": 2.0,
+  "uptime": 2523,
+  "rssi": -31,
+  "gateway": "receiver01",
+  "packet_count": 473,
+  "raw_payload": "ASSET-01,1,29.992221,31.555294,2026-05-12T17:54:49Z,5,2.0,2523"
 }
 ```
 
-### Firebase Prototype Note
+---
 
-Firebase Realtime Database is currently used for academic demonstration. In a production version, database access should be protected using authentication and stricter Firebase security rules.
+## Backend Files
+
+### Serial to Firebase Bridge
+
+```text
+backend/serial_to_firebase.py
+```
+
+This was used in Week 2.
+
+It reads receiver output from the COM port and uploads the parsed location data to Firebase.
+
+This file is kept as a legacy validation path.
+
+### MQTT to Firebase Bridge
+
+```text
+backend/mqtt_to_firebase.py
+```
+
+This is the updated backend bridge.
+
+It subscribes to:
+
+```text
+iot-innovators/assets/all
+```
+
+When an MQTT message is received, it:
+
+1. Parses the JSON payload.
+2. Validates required fields.
+3. Normalizes the data.
+4. Adds dashboard-compatible field aliases.
+5. Uploads the latest asset data to Firebase.
+6. Appends the record to Firebase history.
 
 ---
 
-## Python Serial-to-Firebase Bridge
+## Firebase Database Structure
 
-### File
-
-```text
-serial_to_firebase.py
-```
-
-### Purpose
-
-The Python bridge reads structured serial output from the TTGO LoRa32 receiver and uploads valid readings to Firebase.
-
-### What It Does
-
-- Opens the serial port connected to the receiver.
-- Reads incoming LoRa packet lines.
-- Parses payload fields.
-- Extracts RSSI.
-- Validates GPS fix and coordinate data.
-- Sends latest asset data to Firebase.
-- Appends records to asset history.
-
-### Important Configuration
-
-Inside `serial_to_firebase.py`, update the following values if needed:
-
-```python
-SERIAL_PORT = "COM3"
-BAUD_RATE = 115200
-FIREBASE_BASE_URL = "https://outdoor-asset-localization-default-rtdb.firebaseio.com"
-```
-
-### COM Port Note
-
-The serial port may be different depending on the laptop. For example:
+The backend stores data under:
 
 ```text
-COM3
-COM4
-COM5
+assets/<deviceID>/latest
+assets/<deviceID>/history
 ```
 
-Check the correct port from Arduino IDE under:
+Example:
 
 ```text
-Tools → Port
+assets
+ └── ASSET-01
+      ├── latest
+      │    ├── deviceID
+      │    ├── fix
+      │    ├── latitude
+      │    ├── longitude
+      │    ├── timestamp_utc
+      │    ├── satellites
+      │    ├── hdop
+      │    ├── uptime
+      │    ├── rssi
+      │    ├── gateway
+      │    ├── source
+      │    └── updated_at
+      │
+      └── history
+           ├── record1
+           ├── record2
+           └── record3
 ```
+
+The MQTT bridge also stores dashboard-compatible aliases such as:
+
+```text
+device_id
+timestamp
+received_at
+last_updated
+lat
+lng
+gps_fix
+```
+
+This allows the existing dashboard to work without major changes.
 
 ---
 
@@ -410,213 +523,383 @@ Tools → Port
 ### File
 
 ```text
-dashboard_v1.html
+dashboard/dashboard_v1.html
 ```
+
+The dashboard displays the latest asset data from Firebase.
 
 ### Dashboard Features
 
-The dashboard currently supports:
-
-- live map view
-- Leaflet.js map integration
+- Leaflet.js map
 - OpenStreetMap tiles
-- latest asset marker
-- multiple asset markers
-- asset selection dropdown
-- coordinate panel
+- asset marker on map
+- asset selector
+- live/stale status
+- device ID
 - GPS fix status
-- RSSI display
-- satellite count display
-- last update timestamp
-- automatic refresh every 5 seconds
-- stale data warning
-- no-fix handling
-
-### How to Open the Dashboard
-
-Open the file directly in a browser:
-
-```text
-dashboard_v1.html
-```
-
-Or use VS Code Live Server if available.
+- latitude
+- longitude
+- UTC timestamp
+- satellites
+- HDOP
+- RSSI
+- received time
+- automatic refresh
 
 ---
 
 ## Installation and Setup
 
-### 1. Clone the Repository
+### 1. Arduino IDE Setup
 
-```bash
-git clone <repository-url>
-cd Outdoor-Asset-Localization
+Install the ESP32 board package in Arduino IDE.
+
+Use the board:
+
+```text
+TTGO-LoRa32-OLED
 ```
 
-### 2. Install Python Dependencies
+or if unavailable:
+
+```text
+ESP32 Dev Module
+```
+
+### 2. Arduino Libraries
+
+Install the following libraries from Arduino Library Manager:
+
+```text
+TinyGPSPlus
+LoRa
+PubSubClient
+ArduinoJson
+```
+
+`WiFi.h` is included with the ESP32 board package.
+
+OLED libraries are not required for the No-OLED sender or MQTT receiver.
+
+---
+
+## Uploading the Sender
+
+Open:
+
+```text
+firmware/Sender_NoOLED_v1.0/Sender_NoOLED_v1.0.ino
+```
+
+Check:
+
+```cpp
+#define GPS_RX_PIN 34
+#define GPS_TX_PIN -1
+#define LORA_BAND 868E6
+const char* DEVICE_ID = "ASSET-01";
+```
+
+Upload the code to the sender TTGO board.
+
+Open Serial Monitor at:
+
+```text
+115200 baud
+```
+
+Expected output:
+
+```text
+GPS + LoRa Sender starting...
+Mode: No OLED / Low-power sender
+LoRa init OK
+Waiting for GPS data...
+LoRa Packet Sent
+```
+
+---
+
+## Uploading the Receiver MQTT Gateway
+
+Open:
+
+```text
+firmware/Receiver_MQTT_v1.0/Receiver_MQTT_v1.0.ino
+```
+
+Before uploading, update WiFi credentials:
+
+```cpp
+const char* WIFI_SSID = "YOUR_WIFI_NAME";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+```
+
+Check that the LoRa band matches the sender:
+
+```cpp
+#define LORA_BAND 868E6
+```
+
+Upload the code to the receiver TTGO board.
+
+Open Serial Monitor at:
+
+```text
+115200 baud
+```
+
+Expected output:
+
+```text
+IoT Innovators LoRa MQTT Receiver
+WiFi connected successfully
+MQTT connected
+LoRa receiver initialized successfully
+Waiting for LoRa packets...
+```
+
+When packets arrive:
+
+```text
+LoRa Packet Received
+Payload parsed successfully
+MQTT publish successful
+```
+
+---
+
+## Running the Backend
+
+Go to the backend folder:
+
+```bash
+cd backend
+```
+
+Create and activate a virtual environment if needed:
+
+```bash
+python -m venv venv
+```
+
+Windows PowerShell:
+
+```bash
+.\\venv\\Scripts\\Activate.ps1
+```
+
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Upload Sender Firmware
-
-Open Arduino IDE and upload:
-
-```text
-firmware/Sender_v1.0/Sender_v1.0.ino
-```
-
-to the TTGO LoRa32 sender board.
-
-### 4. Upload Receiver Firmware
-
-Open Arduino IDE and upload:
-
-```text
-firmware/Receiver_v1.0/Receiver_v1.0.ino
-```
-
-to the TTGO LoRa32 receiver board.
-
-### 5. Connect the GPS Module
-
-Connect the NEO-6M GPS module to the sender board using the wiring reference in:
-
-```text
-docs_week_1/wiring-reference.md
-```
-
-### 6. Run the Python Bridge
-
-Make sure the receiver board is connected to the laptop, then run:
+Run the MQTT to Firebase bridge:
 
 ```bash
-python serial_to_firebase.py
+python mqtt_to_firebase.py
 ```
 
-If the COM port is different, update it inside the script before running.
-
-### 7. Open the Dashboard
-
-Open:
+Expected output:
 
 ```text
-dashboard_v1.html
-```
-
-in a browser.
-
----
-
-## Testing Summary
-
-### Week 1 Testing
-
-Week 1 focused on validating:
-
-- GPS module output
-- sender firmware stability
-- LoRa packet transmission
-- receiver parsing
-- RSSI display
-- payload format correctness
-
-Evidence is available in:
-
-```text
-evidence_week_1/
-```
-
-### Week 2 Testing
-
-Week 2 focused on validating:
-
-- serial-to-Firebase bridge
-- Firebase latest records
-- Firebase history records
-- dashboard map display
-- multi-asset support
-- missing GPS fix handling
-- stale data handling
-- invalid payload handling
-
-Evidence is available in:
-
-```text
-evidence_week_2/
-```
-
-Test log:
-
-```text
-docs_week_2/week2-test-log.md
+MQTT Message Received
+Normalized record:
+Uploaded to Firebase successfully.
+Latest path: assets/ASSET-01/latest
+History path: assets/ASSET-01/history
 ```
 
 ---
 
-## Current Completion Status
+## Python Requirements
 
-| Project Area | Status |
-|---|---|
-| GPS reading | Completed |
-| LoRa sender firmware | Completed |
-| LoRa receiver firmware | Completed |
-| Payload format | Completed |
-| Wiring documentation | Completed |
-| Firebase backend selection | Completed |
-| Firebase schema | Completed |
-| Serial-to-Firebase bridge | Completed |
-| Dashboard v1 | Completed |
-| Multi-asset support | Completed |
-| Edge-case handling | Completed |
-| History trail on map | Planned for Week 3 |
-| Geofence warning | Planned for Week 3 |
-| Longer outdoor testing | Planned for Week 3 |
-| Final documentation and presentation | Planned for Week 4 |
+The backend requirements are:
+
+```text
+pyserial
+requests
+paho-mqtt
+```
+
+`pyserial` is kept for the Week 2 serial bridge.  
+`paho-mqtt` is used for the Week 3 MQTT bridge.  
+`requests` is used to upload data to Firebase.
 
 ---
 
-## Planned Week 3 Work
+## Opening the Dashboard
 
-The next phase will focus on adding the main project features beyond basic live tracking.
+Open the dashboard using VS Code Live Server:
 
-### Planned Tasks
+```text
+dashboard/dashboard_v1.html
+```
 
-- Display historical movement trail on the dashboard map.
-- Implement a simple geofence.
-- Show warning when an asset leaves the allowed area.
-- Run longer outdoor LoRa transmission tests.
-- Improve technical documentation.
-- Add more complete architecture and data-flow diagrams.
-- Continue improving dashboard UI.
+The dashboard reads from Firebase, so it works with both:
+
+```text
+Week 2: Serial Bridge → Firebase
+Week 3: MQTT Bridge → Firebase
+```
+
+For the updated MQTT version, the full flow is:
+
+```text
+Sender_NoOLED → LoRa → Receiver_MQTT → MQTT → mqtt_to_firebase.py → Firebase → Dashboard
+```
+
+---
+
+## Week 1 Progress
+
+Week 1 focused on stable embedded communication.
+
+### Completed
+
+- Sender firmware created.
+- Receiver firmware created.
+- GPS module connected to sender.
+- LoRa communication tested.
+- Payload format documented.
+- Wiring reference documented.
+- Outdoor GPS-to-LoRa tests performed.
+- Initial Firebase backend schema prepared.
+- Evidence screenshots collected.
+
+### Week 1 Evidence
+
+```text
+evidence/week_1/
+```
+
+---
+
+## Week 2 Progress
+
+Week 2 focused on creating the first end-to-end software path.
+
+### Completed
+
+- Receiver output connected to Firebase using Python serial bridge.
+- Firebase stores latest asset location.
+- Firebase stores location history.
+- Dashboard v1 created.
+- Dashboard displays asset location on map.
+- Dashboard supports asset selection.
+- Dashboard displays coordinates and status fields.
+- Edge cases handled:
+  - missing GPS fix
+  - delayed/stale packets
+  - invalid payloads
+  - multiple asset IDs
+
+### Week 2 Evidence
+
+```text
+evidence/week_2/
+```
+
+---
+
+## Week 3 Progress
+
+Week 3 improves the architecture based on feedback.
+
+### Completed
+
+- Added No-OLED sender firmware to reduce unnecessary power usage.
+- Added MQTT receiver/gateway firmware.
+- Receiver now connects to WiFi.
+- Receiver now publishes received LoRa packets to MQTT.
+- Added MQTT to Firebase bridge.
+- Firebase now receives data from MQTT.
+- Existing dashboard works with MQTT-updated Firebase data.
+- UTC timestamp, device ID, and received time are visible on dashboard.
+- Evidence screenshots collected.
+
+### Week 3 Evidence
+
+```text
+evidence/week_3/
+```
+
+Recommended evidence files:
+
+```text
+mqtt-receiver-serial.png
+mqtt-to-firebase-bridge.png
+firebase-latest-mqtt.png
+firebase-history-mqtt.png
+dashboard-mqtt-live.png
+```
+
+---
+
+## Design Decisions
+
+### 1. Sender Kept as GPS + LoRa Only
+
+The sender is attached to the moving asset, so it should remain simple and power-efficient.
+
+Adding WiFi/MQTT to the sender would increase power consumption and reduce the benefit of using LoRa.
+
+Therefore:
+
+```text
+Sender = GPS + LoRa only
+```
+
+### 2. Receiver Upgraded into Gateway
+
+The receiver is less power-sensitive and can act as the internet gateway.
+
+Therefore:
+
+```text
+Receiver = LoRa + WiFi + MQTT
+```
+
+### 3. OLED Disabled in Updated Sender
+
+The OLED display is useful for debugging but not required for final operation.
+
+A No-OLED sender version was added to reduce power consumption.
+
+### 4. Firebase Kept as Backend
+
+The dashboard was already working with Firebase, so the MQTT upgrade was integrated by adding an MQTT-to-Firebase bridge instead of rebuilding the dashboard from scratch.
 
 ---
 
 ## Known Limitations
 
 - GPS fix may be slow or unavailable indoors.
-- Firebase is currently configured for prototype/demo use.
-- The dashboard currently uses polling instead of full real-time listeners.
-- Power consumption measurement is not yet implemented.
-- TTN/LoRaWAN support is optional and not part of the current core implementation.
-- Current dashboard is a local HTML prototype, not a hosted web application.
+- MQTT currently uses a public broker for testing.
+- Firebase is configured for academic prototype use.
+- Dashboard uses polling rather than direct real-time MQTT subscription.
+- Power consumption has not yet been fully measured.
+- TTN/LoRaWAN integration is not part of the current core implementation.
 
 ---
 
 ## Future Improvements
 
-- Add history trail visualization.
 - Add geofence warning.
-- Add power consumption measurements.
-- Add better authentication and Firebase security rules.
-- Add hosted dashboard deployment.
-- Add optional TTN/LoRaWAN support.
-- Add device battery status if hardware support is added.
-- Add exportable logs for testing and analysis.
+- Add movement history trail on the map.
+- Measure sender power consumption with OLED disabled.
+- Add private/authenticated MQTT broker.
+- Add stronger Firebase security rules.
+- Host the dashboard online.
+- Add battery monitoring.
+- Add data export for testing and analysis.
+- Add optional TTN/LoRaWAN integration if gateway access is available.
 
 ---
 
 ## Academic Prototype Notice
 
-This repository is an academic IoT prototype. It is intended for demonstration, experimentation, and learning purposes. A production-ready asset localization system would require stronger security, reliable enclosure design, power optimization, authentication, and field validation.
+This repository is an academic IoT prototype. It is intended for demonstration, experimentation, and learning purposes.
+
+A production-ready outdoor asset localization system would require stronger security, enclosure design, power optimization, authenticated cloud communication, and extended field testing.
