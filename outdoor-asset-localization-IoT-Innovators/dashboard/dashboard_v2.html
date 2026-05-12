@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Outdoor Asset Localization - Dashboard V2</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 18px 24px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    header p {
+      margin: 6px 0 0;
+      color: #d1d5db;
+      font-size: 14px;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 16px;
+      padding: 16px;
+      height: calc(100vh - 86px);
+    }
+
+    .panel {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+      overflow-y: auto;
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      font-size: 20px;
+      color: #111827;
+    }
+
+    .section {
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    select,
+    button,
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    button {
+      background: #111827;
+      color: white;
+      cursor: pointer;
+      margin-top: 8px;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #374151;
+    }
+
+    .status-box {
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .status-live {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-stale {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-nofix {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-warning {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-inside {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 14px;
+    }
+
+    .data-row span:first-child {
+      font-weight: bold;
+      color: #374151;
+    }
+
+    .data-row span:last-child {
+      text-align: right;
+      color: #111827;
+      word-break: break-word;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    }
+
+    .small-note {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .warning-text {
+      color: #b91c1c;
+      font-weight: bold;
+    }
+
+    .success-text {
+      color: #166534;
+      font-weight: bold;
+    }
+
+    .info-text {
+      color: #1d4ed8;
+      font-weight: bold;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+
+      #map {
+        height: 520px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Outdoor Asset Localization - Dashboard V2</h1>
+    <p>Live asset tracking with history trail and geofence warning</p>
+  </header>
+
+  <main class="dashboard">
+    <aside class="panel">
+      <div class="section">
+        <h2>Asset Control</h2>
+
+        <label for="assetSelect">Select Asset</label>
+        <select id="assetSelect">
+          <option value="">Loading assets...</option>
+        </select>
+
+        <button onclick="manualRefresh()">Refresh Now</button>
+
+        <p class="small-note">
+          Dashboard reads latest and historical records from Firebase.
+          Data can arrive from the MQTT receiver gateway.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>Asset Status</h2>
+        <div id="assetStatusBox" class="status-box status-stale">
+          Waiting for data...
+        </div>
+
+        <div class="data-row">
+          <span>Device ID</span>
+          <span id="deviceId">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>GPS Fix</span>
+          <span id="gpsFix">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>Latitude</span>
+          <span id="latitude">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>Longitude</span>
+          <span id="longitude">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>UTC Timestamp</span>
+          <span id="utcTimestamp">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>Satellites</span>
+          <span id="satellites">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>HDOP</span>
+          <span id="hdop">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>RSSI</span>
+          <span id="rssi">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>Gateway</span>
+          <span id="gateway">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>Source</span>
+          <span id="source">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>Received At</span>
+          <span id="receivedAt">N/A</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Geofence</h2>
+
+        <div id="geofenceStatusBox" class="status-box status-stale">
+          Checking geofence...
+        </div>
+
+        <div class="data-row">
+          <span>Zone Center</span>
+          <span id="zoneCenter">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>Radius</span>
+          <span id="zoneRadius">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>Distance</span>
+          <span id="zoneDistance">N/A</span>
+        </div>
+
+        <p class="small-note">
+          The geofence is currently implemented as a circular zone.
+          Update the center coordinates in the JavaScript config if your test location changes.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>History Trail</h2>
+
+        <div class="data-row">
+          <span>Records Loaded</span>
+          <span id="historyCount">0</span>
+        </div>
+
+        <div class="data-row">
+          <span>Trail Status</span>
+          <span id="trailStatus">N/A</span>
+        </div>
+
+        <p class="small-note">
+          The path trail is drawn using recent records stored under
+          <strong>assets/&lt;deviceID&gt;/history</strong>.
+        </p>
+      </div>
+    </aside>
+
+    <section id="map"></section>
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // ============================================================
+    // Firebase Configuration
+    // ============================================================
+    const FIREBASE_BASE_URL =
+      "https://outdoor-asset-localization-default-rtdb.firebaseio.com";
+
+    // ============================================================
+    // Dashboard Configuration
+    // ============================================================
+    const REFRESH_INTERVAL_MS = 5000;
+    const STALE_THRESHOLD_SECONDS = 30;
+    const MAX_HISTORY_POINTS = 50;
+
+    /*
+      Update this to your real test area.
+
+      Current center is close to the live coordinates you showed:
+      latitude: 29.99222
+      longitude: 31.55529
+
+      Radius is in meters.
+    */
+    const GEOFENCE = {
+      name: "Test Zone",
+      centerLat: 29.99222,
+      centerLng: 31.55529,
+      radiusMeters: 200
+    };
+
+    // ============================================================
+    // Global State
+    // ============================================================
+    let map;
+    let assetMarker = null;
+    let trailLine = null;
+    let geofenceCircle = null;
+    let selectedAssetId = null;
+    let refreshTimer = null;
+
+    // ============================================================
+    // Map Initialization
+    // ============================================================
+    function initMap() {
+      map = L.map("map").setView([GEOFENCE.centerLat, GEOFENCE.centerLng], 16);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      geofenceCircle = L.circle([GEOFENCE.centerLat, GEOFENCE.centerLng], {
+        radius: GEOFENCE.radiusMeters,
+        color: "#2563eb",
+        fillColor: "#3b82f6",
+        fillOpacity: 0.12,
+        weight: 2
+      }).addTo(map);
+
+      geofenceCircle.bindPopup(`${GEOFENCE.name} - ${GEOFENCE.radiusMeters}m radius`);
+
+      document.getElementById("zoneCenter").textContent =
+        `${GEOFENCE.centerLat.toFixed(6)}, ${GEOFENCE.centerLng.toFixed(6)}`;
+
+      document.getElementById("zoneRadius").textContent =
+        `${GEOFENCE.radiusMeters} m`;
+    }
+
+    // ============================================================
+    // Firebase Helpers
+    // ============================================================
+    async function firebaseGet(path) {
+      const cleanPath = path.replace(/^\/+|\/+$/g, "");
+      const response = await fetch(`${FIREBASE_BASE_URL}/${cleanPath}.json`);
+
+      if (!response.ok) {
+        throw new Error(`Firebase request failed: ${response.status}`);
+      }
+
+      return await response.json();
+    }
+
+    // ============================================================
+    // Load Asset List
+    // ============================================================
+    async function loadAssets() {
+      const assetSelect = document.getElementById("assetSelect");
+
+      try {
+        const assets = await firebaseGet("assets");
+
+        assetSelect.innerHTML = "";
+
+        if (!assets) {
+          assetSelect.innerHTML = `<option value="">No assets found</option>`;
+          return;
+        }
+
+        const assetIds = Object.keys(assets);
+
+        if (assetIds.length === 0) {
+          assetSelect.innerHTML = `<option value="">No assets found</option>`;
+          return;
+        }
+
+        assetIds.forEach((assetId) => {
+          const option = document.createElement("option");
+          option.value = assetId;
+          option.textContent = assetId;
+          assetSelect.appendChild(option);
+        });
+
+        selectedAssetId = selectedAssetId || assetIds[0];
+        assetSelect.value = selectedAssetId;
+
+        assetSelect.addEventListener("change", () => {
+          selectedAssetId = assetSelect.value;
+          refreshDashboard();
+        });
+
+        await refreshDashboard();
+      } catch (error) {
+        console.error(error);
+        assetSelect.innerHTML = `<option value="">Error loading assets</option>`;
+        setAssetStatus("Error loading assets", "status-nofix");
+      }
+    }
+
+    // ============================================================
+    // Refresh Dashboard
+    // ============================================================
+    async function refreshDashboard() {
+      if (!selectedAssetId) {
+        return;
+      }
+
+      try {
+        const latest = await firebaseGet(`assets/${selectedAssetId}/latest`);
+        const history = await firebaseGet(`assets/${selectedAssetId}/history`);
+
+        if (!latest) {
+          setAssetStatus("No latest data found", "status-stale");
+          return;
+        }
+
+        updateAssetPanel(latest);
+        updateLiveMarker(latest);
+        updateHistoryTrail(history);
+        updateGeofenceStatus(latest);
+      } catch (error) {
+        console.error(error);
+        setAssetStatus("Dashboard refresh error", "status-nofix");
+      }
+    }
+
+    function manualRefresh() {
+      refreshDashboard();
+    }
+
+    // ============================================================
+    // Data Normalization Helpers
+    // ============================================================
+    function getDeviceId(data) {
+      return data.deviceID || data.device_id || data.deviceId || data.id || selectedAssetId || "N/A";
+    }
+
+    function getTimestampUtc(data) {
+      return (
+        data.timestamp_utc ||
+        data.timestampUTC ||
+        data.timestampUtc ||
+        data.utc_timestamp ||
+        data.utcTimestamp ||
+        data.utc_time ||
+        data.utcTime ||
+        data.gps_time ||
+        data.gpsTime ||
+        data.timestamp ||
+        data.time ||
+        "N/A"
+      );
+    }
+
+    function getReceivedAt(data) {
+      return (
+        data.received_at ||
+        data.receivedAt ||
+        data.updated_at ||
+        data.updatedAt ||
+        data.last_updated ||
+        data.lastUpdated ||
+        "N/A"
+      );
+    }
+
+    function getLatitude(data) {
+      const value = data.latitude ?? data.lat;
+      return parseFloat(value);
+    }
+
+    function getLongitude(data) {
+      const value = data.longitude ?? data.lng;
+      return parseFloat(value);
+    }
+
+    function getFix(data) {
+      const value = data.fix ?? data.gps_fix ?? data.gpsFix;
+      return parseInt(value);
+    }
+
+    function isValidCoordinate(lat, lng) {
+      return (
+        Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng >= -180 &&
+        lng <= 180
+      );
+    }
+
+    // ============================================================
+    // Asset Panel Update
+    // ============================================================
+    function updateAssetPanel(data) {
+      const deviceId = getDeviceId(data);
+      const lat = getLatitude(data);
+      const lng = getLongitude(data);
+      const fix = getFix(data);
+      const timestampUtc = getTimestampUtc(data);
+      const receivedAt = getReceivedAt(data);
+
+      document.getElementById("deviceId").textContent = deviceId;
+      document.getElementById("gpsFix").textContent =
+        fix === 1 ? "Valid Fix" : "Invalid / Waiting";
+
+      document.getElementById("latitude").textContent =
+        Number.isFinite(lat) ? lat.toFixed(6) : "N/A";
+
+      document.getElementById("longitude").textContent =
+        Number.isFinite(lng) ? lng.toFixed(6) : "N/A";
+
+      document.getElementById("utcTimestamp").textContent = timestampUtc;
+
+      document.getElementById("satellites").textContent =
+        data.satellites ?? data.satellite_count ?? data.satelliteCount ?? "N/A";
+
+      document.getElementById("hdop").textContent =
+        data.hdop ?? "N/A";
+
+      document.getElementById("rssi").textContent =
+        data.rssi ?? data.signal_rssi ?? data.signalRssi ?? "N/A";
+
+      document.getElementById("gateway").textContent =
+        data.gateway ?? "N/A";
+
+      document.getElementById("source").textContent =
+        data.source ?? "N/A";
+
+      document.getElementById("receivedAt").textContent = receivedAt;
+
+      const stale = isDataStale(receivedAt);
+
+      if (fix !== 1) {
+        setAssetStatus("No Valid GPS Fix", "status-nofix");
+      } else if (stale) {
+        setAssetStatus("Stale Data", "status-stale");
+      } else {
+        setAssetStatus("Live", "status-live");
+      }
+    }
+
+    function setAssetStatus(text, className) {
+      const box = document.getElementById("assetStatusBox");
+      box.textContent = text;
+      box.className = `status-box ${className}`;
+    }
+
+    function isDataStale(receivedAt) {
+      if (!receivedAt || receivedAt === "N/A") {
+        return true;
+      }
+
+      const receivedTime = new Date(receivedAt).getTime();
+
+      if (Number.isNaN(receivedTime)) {
+        return true;
+      }
+
+      const ageSeconds = (Date.now() - receivedTime) / 1000;
+      return ageSeconds > STALE_THRESHOLD_SECONDS;
+    }
+
+    // ============================================================
+    // Live Marker
+    // ============================================================
+    function updateLiveMarker(data) {
+      const lat = getLatitude(data);
+      const lng = getLongitude(data);
+      const fix = getFix(data);
+
+      if (!isValidCoordinate(lat, lng)) {
+        return;
+      }
+
+      const deviceId = getDeviceId(data);
+      const timestampUtc = getTimestampUtc(data);
+      const rssi = data.rssi ?? "N/A";
+
+      const popupHtml = `
+        <strong>${deviceId}</strong><br>
+        Fix: ${fix === 1 ? "Valid" : "Invalid"}<br>
+        Lat: ${lat.toFixed(6)}<br>
+        Lng: ${lng.toFixed(6)}<br>
+        UTC: ${timestampUtc}<br>
+        RSSI: ${rssi}
+      `;
+
+      if (!assetMarker) {
+        assetMarker = L.marker([lat, lng]).addTo(map);
+      } else {
+        assetMarker.setLatLng([lat, lng]);
+      }
+
+      assetMarker.bindPopup(popupHtml);
+
+      map.setView([lat, lng], Math.max(map.getZoom(), 16));
+    }
+
+    // ============================================================
+    // History Trail
+    // ============================================================
+    function updateHistoryTrail(history) {
+      if (!history) {
+        document.getElementById("historyCount").textContent = "0";
+        document.getElementById("trailStatus").textContent = "No history found";
+
+        if (trailLine) {
+          map.removeLayer(trailLine);
+          trailLine = null;
+        }
+
+        return;
+      }
+
+      const records = Object.values(history);
+
+      records.sort((a, b) => {
+        const aTime = new Date(getReceivedAt(a)).getTime();
+        const bTime = new Date(getReceivedAt(b)).getTime();
+        return aTime - bTime;
+      });
+
+      const recentRecords = records.slice(-MAX_HISTORY_POINTS);
+
+      const points = recentRecords
+        .map((record) => {
+          const lat = getLatitude(record);
+          const lng = getLongitude(record);
+
+          if (!isValidCoordinate(lat, lng)) {
+            return null;
+          }
+
+          return [lat, lng];
+        })
+        .filter(Boolean);
+
+      document.getElementById("historyCount").textContent = points.length;
+
+      if (trailLine) {
+        map.removeLayer(trailLine);
+        trailLine = null;
+      }
+
+      if (points.length < 2) {
+        document.getElementById("trailStatus").textContent =
+          "Need at least 2 valid points";
+        return;
+      }
+
+      trailLine = L.polyline(points, {
+        color: "#ef4444",
+        weight: 4,
+        opacity: 0.85
+      }).addTo(map);
+
+      document.getElementById("trailStatus").textContent = "Trail visible";
+    }
+
+    // ============================================================
+    // Geofence
+    // ============================================================
+    function updateGeofenceStatus(data) {
+      const lat = getLatitude(data);
+      const lng = getLongitude(data);
+
+      if (!isValidCoordinate(lat, lng)) {
+        setGeofenceStatus("No valid coordinate", "status-stale");
+        document.getElementById("zoneDistance").textContent = "N/A";
+        return;
+      }
+
+      const distance = calculateDistanceMeters(
+        lat,
+        lng,
+        GEOFENCE.centerLat,
+        GEOFENCE.centerLng
+      );
+
+      document.getElementById("zoneDistance").textContent =
+        `${distance.toFixed(1)} m`;
+
+      if (distance <= GEOFENCE.radiusMeters) {
+        setGeofenceStatus("Inside Zone", "status-inside");
+      } else {
+        setGeofenceStatus("Outside Zone - Warning", "status-warning");
+      }
+    }
+
+    function setGeofenceStatus(text, className) {
+      const box = document.getElementById("geofenceStatusBox");
+      box.textContent = text;
+      box.className = `status-box ${className}`;
+    }
+
+    function calculateDistanceMeters(lat1, lng1, lat2, lng2) {
+      const earthRadius = 6371000;
+
+      const toRad = (value) => (value * Math.PI) / 180;
+
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) *
+          Math.cos(toRad(lat2)) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return earthRadius * c;
+    }
+
+    // ============================================================
+    // Start Dashboard
+    // ============================================================
+    window.addEventListener("load", async () => {
+      initMap();
+      await loadAssets();
+
+      refreshTimer = setInterval(() => {
+        refreshDashboard();
+      }, REFRESH_INTERVAL_MS);
+    });
+  </script>
+</body>
+</html>

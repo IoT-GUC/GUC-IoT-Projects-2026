@@ -30,7 +30,7 @@ This project is developed as an academic IoT prototype for **NETW1010: Internet 
 ```text
 NEO-6M GPS Module
         ↓
-TTGO LoRa32 Sender
+TTGO LoRa32 Sender No-OLED
         ↓
 LoRa Wireless Communication
         ↓
@@ -42,7 +42,7 @@ MQTT to Firebase Bridge
         ↓
 Firebase Realtime Database
         ↓
-Web Dashboard
+Dashboard V2
 ```
 
 ---
@@ -85,19 +85,19 @@ The backend uses **Firebase Realtime Database** to store:
 
 ### 6. Dashboard Layer
 
-The dashboard uses **HTML, CSS, JavaScript, Leaflet.js, and OpenStreetMap** to display the asset location on a map.
+The dashboard uses **HTML, CSS, JavaScript, Leaflet.js, and OpenStreetMap** to display asset locations on a map.
 
-The dashboard reads from Firebase and shows:
+Dashboard V1 was created during Week 2 for basic live location display.
 
-- current asset location
-- GPS fix status
-- latitude and longitude
-- UTC timestamp
-- RSSI
-- satellites
-- HDOP
-- received time
-- live/stale status
+Dashboard V2 was created during Week 3 and adds:
+
+- live marker
+- history trail
+- geofence circle
+- inside/outside geofence warning
+- multi-asset dropdown
+- automatic refresh
+- Firebase latest and history reading
 
 ---
 
@@ -108,7 +108,7 @@ The dashboard reads from Firebase and shows:
 - LILYGO TTGO LoRa32 board as receiver/gateway
 - Female-to-female jumper wires
 - USB data cables
-- Laptop for programming, testing, and dashboard viewing
+- Laptop for programming, testing, backend bridge, and dashboard viewing
 
 ---
 
@@ -135,6 +135,7 @@ The dashboard reads from Firebase and shows:
 - Python 3
 - requests
 - paho-mqtt
+- pyserial
 - Firebase Realtime Database
 
 ### Frontend
@@ -173,7 +174,8 @@ outdoor-asset-localization-IoT-Innovators/
 │   └── requirements.txt
 │
 ├── dashboard/
-│   └── dashboard_v1.html
+│   ├── dashboard_v1.html
+│   └── dashboard_v2.html
 │
 ├── docs/
 │   ├── week_1/
@@ -186,7 +188,9 @@ outdoor-asset-localization-IoT-Innovators/
 │   │   └── week2-test-log.md
 │   │
 │   └── week_3/
-│       └── mqtt-integration.md
+│       ├── mqtt-integration.md
+│       ├── dashboard-v2-features.md
+│       └── week3-test-log.md
 │
 ├── evidence/
 │   ├── week_1/
@@ -208,7 +212,11 @@ outdoor-asset-localization-IoT-Innovators/
 │       ├── mqtt-to-firebase-bridge.png
 │       ├── firebase-latest-mqtt.png
 │       ├── firebase-history-mqtt.png
-│       └── dashboard-mqtt-live.png
+│       ├── dashboard-v2-live-marker.png
+│       ├── dashboard-v2-geofence-inside.png
+│       ├── dashboard-v2-geofence-warning.png
+│       ├── dashboard-v2-history-trail.png
+│       └── dashboard-v2-status-panel.png
 │
 ├── presentation/
 │   └── IoT_Innovators_Presentation.pdf
@@ -514,26 +522,45 @@ lng
 gps_fix
 ```
 
-This allows the existing dashboard to work without major changes.
+This allows the existing dashboard files to work without major changes.
 
 ---
 
-## Dashboard
+## Dashboard Files
 
-### File
+### Dashboard V1
 
 ```text
 dashboard/dashboard_v1.html
 ```
 
-The dashboard displays the latest asset data from Firebase.
+Dashboard V1 was created during Week 2 and displays the current asset location using Firebase latest records.
 
-### Dashboard Features
+### Dashboard V2
 
-- Leaflet.js map
-- OpenStreetMap tiles
+```text
+dashboard/dashboard_v2.html
+```
+
+Dashboard V2 was created during Week 3.
+
+It includes:
+
+- live marker
+- history trail
+- geofence circle
+- inside/outside geofence warning
+- multi-asset dropdown
+- status panel
+- automatic refresh
+- Firebase latest reading
+- Firebase history reading
+
+### Dashboard V2 Features
+
+Dashboard V2 displays:
+
 - asset marker on map
-- asset selector
 - live/stale status
 - device ID
 - GPS fix status
@@ -543,8 +570,13 @@ The dashboard displays the latest asset data from Firebase.
 - satellites
 - HDOP
 - RSSI
+- gateway
+- source
 - received time
-- automatic refresh
+- geofence status
+- distance from geofence center
+- history record count
+- trail status
 
 ---
 
@@ -686,7 +718,7 @@ python -m venv venv
 Windows PowerShell:
 
 ```bash
-.\\venv\\Scripts\\Activate.ps1
+.\venv\Scripts\Activate.ps1
 ```
 
 Install dependencies:
@@ -729,25 +761,28 @@ paho-mqtt
 
 ---
 
-## Opening the Dashboard
+## Opening the Dashboards
 
-Open the dashboard using VS Code Live Server:
+### Dashboard V1
+
+Open using VS Code Live Server:
 
 ```text
 dashboard/dashboard_v1.html
 ```
 
-The dashboard reads from Firebase, so it works with both:
+### Dashboard V2
+
+Open using VS Code Live Server:
 
 ```text
-Week 2: Serial Bridge → Firebase
-Week 3: MQTT Bridge → Firebase
+dashboard/dashboard_v2.html
 ```
 
-For the updated MQTT version, the full flow is:
+Dashboard V2 reads from Firebase, so the updated full flow is:
 
 ```text
-Sender_NoOLED → LoRa → Receiver_MQTT → MQTT → mqtt_to_firebase.py → Firebase → Dashboard
+Sender_NoOLED → LoRa → Receiver_MQTT → MQTT → mqtt_to_firebase.py → Firebase → Dashboard V2
 ```
 
 ---
@@ -785,7 +820,7 @@ Week 2 focused on creating the first end-to-end software path.
 - Receiver output connected to Firebase using Python serial bridge.
 - Firebase stores latest asset location.
 - Firebase stores location history.
-- Dashboard v1 created.
+- Dashboard V1 created.
 - Dashboard displays asset location on map.
 - Dashboard supports asset selection.
 - Dashboard displays coordinates and status fields.
@@ -805,7 +840,7 @@ evidence/week_2/
 
 ## Week 3 Progress
 
-Week 3 improves the architecture based on feedback.
+Week 3 improves the architecture and adds the main project features beyond the basic location display.
 
 ### Completed
 
@@ -815,9 +850,16 @@ Week 3 improves the architecture based on feedback.
 - Receiver now publishes received LoRa packets to MQTT.
 - Added MQTT to Firebase bridge.
 - Firebase now receives data from MQTT.
-- Existing dashboard works with MQTT-updated Firebase data.
+- Dashboard V2 created.
+- Dashboard V2 displays a live marker.
+- Dashboard V2 displays historical path trail from Firebase history records.
+- Dashboard V2 includes a simple circular geofence.
+- Dashboard V2 shows inside/outside geofence status.
+- Dashboard V2 supports multi-asset selection through dropdown.
+- Dashboard V2 refreshes automatically.
 - UTC timestamp, device ID, and received time are visible on dashboard.
-- Evidence screenshots collected.
+- Week 3 documentation files created.
+- Week 3 evidence screenshots collected.
 
 ### Week 3 Evidence
 
@@ -832,8 +874,45 @@ mqtt-receiver-serial.png
 mqtt-to-firebase-bridge.png
 firebase-latest-mqtt.png
 firebase-history-mqtt.png
-dashboard-mqtt-live.png
+dashboard-v2-live-marker.png
+dashboard-v2-geofence-inside.png
+dashboard-v2-geofence-warning.png
+dashboard-v2-history-trail.png
+dashboard-v2-status-panel.png
 ```
+
+---
+
+## Week 3 Requirement Mapping
+
+| Week 3 Requirement | Status |
+|---|---|
+| Store historical coordinates | Completed |
+| Show recent path trail on map | Completed in Dashboard V2 |
+| Implement simple geofence | Completed |
+| Provide warning when asset leaves zone | Completed |
+| Run longer tests to check consistency | Initial validation completed; longer test documented |
+| Display asset location on map using live coordinates | Completed |
+| Implement real-time updates | Completed using automatic refresh |
+| Multi-asset support or simulated multi-device view | Completed through asset dropdown |
+| Stored historical data visible in database and dashboard | Completed |
+| Technical documentation at least 50% complete | Completed through Week 3 docs |
+
+---
+
+## Google Maps API Note
+
+The original plan mentioned Google Maps API integration. For this academic prototype, **Leaflet.js with OpenStreetMap** was used instead.
+
+This avoids API key and billing requirements while still providing:
+
+- live map visualization
+- marker tracking
+- history trail
+- geofence circle
+- inside/outside warning
+
+This fulfills the mapping requirements while keeping the system lightweight and easy to test.
 
 ---
 
@@ -871,6 +950,12 @@ A No-OLED sender version was added to reduce power consumption.
 
 The dashboard was already working with Firebase, so the MQTT upgrade was integrated by adding an MQTT-to-Firebase bridge instead of rebuilding the dashboard from scratch.
 
+### 5. Dashboard V2 Added Instead of Replacing Dashboard V1
+
+Dashboard V1 was kept as the Week 2 version.
+
+Dashboard V2 was added as the Week 3 version with history trail and geofence features.
+
 ---
 
 ## Known Limitations
@@ -878,16 +963,15 @@ The dashboard was already working with Firebase, so the MQTT upgrade was integra
 - GPS fix may be slow or unavailable indoors.
 - MQTT currently uses a public broker for testing.
 - Firebase is configured for academic prototype use.
-- Dashboard uses polling rather than direct real-time MQTT subscription.
+- Dashboard uses polling rather than direct MQTT WebSocket subscription.
 - Power consumption has not yet been fully measured.
 - TTN/LoRaWAN integration is not part of the current core implementation.
+- The history trail may look short when the sender is stationary or when GPS points are very close together.
 
 ---
 
 ## Future Improvements
 
-- Add geofence warning.
-- Add movement history trail on the map.
 - Measure sender power consumption with OLED disabled.
 - Add private/authenticated MQTT broker.
 - Add stronger Firebase security rules.
@@ -895,6 +979,8 @@ The dashboard was already working with Firebase, so the MQTT upgrade was integra
 - Add battery monitoring.
 - Add data export for testing and analysis.
 - Add optional TTN/LoRaWAN integration if gateway access is available.
+- Improve dashboard styling and add configurable geofence controls.
+- Add direct MQTT WebSocket dashboard support.
 
 ---
 
