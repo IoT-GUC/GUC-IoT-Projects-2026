@@ -6,6 +6,15 @@ This project implements an IoT-based outdoor asset localization system using a *
 
 The system tracks outdoor assets by collecting live GPS coordinates from a sender node, transmitting them wirelessly using **LoRa**, forwarding the received data through **WiFi/MQTT**, storing it in **Firebase Realtime Database**, and displaying the latest asset location on a web dashboard.
 
+The project currently includes:
+
+- a Week 2 dashboard for basic live location display
+- a Week 3 Dashboard V2 with live marker, history trail, geofence, and warning
+- a Google Maps API dashboard version to satisfy the Google Maps API requirement
+- MQTT receiver gateway integration
+- Firebase latest and historical data storage
+- a No-OLED sender firmware version for reduced power usage
+
 This project is developed as an academic IoT prototype for **NETW1010: Internet of Things**.
 
 ---
@@ -42,7 +51,7 @@ MQTT to Firebase Bridge
         ↓
 Firebase Realtime Database
         ↓
-Dashboard V2
+Dashboard V2 / Google Maps Dashboard
 ```
 
 ---
@@ -82,22 +91,21 @@ The backend uses **Firebase Realtime Database** to store:
 - satellite count
 - timestamp
 - gateway information
+- MQTT source information
+- dashboard-compatible aliases
 
 ### 6. Dashboard Layer
 
-The dashboard uses **HTML, CSS, JavaScript, Leaflet.js, and OpenStreetMap** to display asset locations on a map.
+The dashboard layer includes three dashboard files:
 
-Dashboard V1 was created during Week 2 for basic live location display.
+1. **Dashboard V1**  
+   A Week 2 dashboard for basic live location display.
 
-Dashboard V2 was created during Week 3 and adds:
+2. **Dashboard V2**  
+   A Week 3 dashboard using **Leaflet.js + OpenStreetMap**. It includes live marker, history trail, geofence circle, inside/outside warning, asset dropdown, and automatic refresh.
 
-- live marker
-- history trail
-- geofence circle
-- inside/outside geofence warning
-- multi-asset dropdown
-- automatic refresh
-- Firebase latest and history reading
+3. **Google Maps API Dashboard**  
+   A Week 3 dashboard using **Google Maps JavaScript API**. It was added because Google Maps API integration is mandatory in the Week 3 plan.
 
 ---
 
@@ -109,6 +117,7 @@ Dashboard V2 was created during Week 3 and adds:
 - Female-to-female jumper wires
 - USB data cables
 - Laptop for programming, testing, backend bridge, and dashboard viewing
+- Power bank for standalone sender operation during the final moving-asset demo
 
 ---
 
@@ -145,6 +154,7 @@ Dashboard V2 was created during Week 3 and adds:
 - JavaScript
 - Leaflet.js
 - OpenStreetMap
+- Google Maps JavaScript API
 
 ---
 
@@ -175,7 +185,8 @@ outdoor-asset-localization-IoT-Innovators/
 │
 ├── dashboard/
 │   ├── dashboard_v1.html
-│   └── dashboard_v2.html
+│   ├── dashboard_v2.html
+│   └── dashboard_google_maps.html
 │
 ├── docs/
 │   ├── week_1/
@@ -216,7 +227,9 @@ outdoor-asset-localization-IoT-Innovators/
 │       ├── dashboard-v2-geofence-inside.png
 │       ├── dashboard-v2-geofence-warning.png
 │       ├── dashboard-v2-history-trail.png
-│       └── dashboard-v2-status-panel.png
+│       ├── dashboard-v2-status-panel.png
+│       ├── dashboard-google-maps-api.png
+│       └── google-maps-billing-warning.png
 │
 ├── presentation/
 │   └── IoT_Innovators_Presentation.pdf
@@ -225,7 +238,8 @@ outdoor-asset-localization-IoT-Innovators/
 │   └── references.md
 │
 └── diagrams/
-    └── system-architecture.png
+    ├── system-architecture.png
+    └── system-architecture-week3.png
 ```
 
 ---
@@ -542,7 +556,7 @@ Dashboard V1 was created during Week 2 and displays the current asset location u
 dashboard/dashboard_v2.html
 ```
 
-Dashboard V2 was created during Week 3.
+Dashboard V2 was created during Week 3 using Leaflet.js and OpenStreetMap.
 
 It includes:
 
@@ -577,6 +591,43 @@ Dashboard V2 displays:
 - distance from geofence center
 - history record count
 - trail status
+
+### Google Maps API Dashboard
+
+```text
+dashboard/dashboard_google_maps.html
+```
+
+This file was added because Google Maps API integration is mandatory in the Week 3 plan.
+
+It reads the same Firebase latest/history records as Dashboard V2 and implements:
+
+- live marker using Google Maps Marker
+- history trail using Google Maps Polyline
+- geofence using Google Maps Circle
+- inside/outside warning
+- multi-asset dropdown
+- automatic refresh
+- Firebase latest reading
+- Firebase history reading
+
+### Google Maps API Key Note
+
+The Google Maps dashboard contains a placeholder:
+
+```js
+const GOOGLE_MAPS_API_KEY = "PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE";
+```
+
+The real API key should be pasted locally during testing.
+
+Do not push a real unrestricted API key to a public repository.
+
+### Google Maps Billing Note
+
+Google Maps JavaScript API was integrated as required. During testing, the map displayed the **“For development purposes only”** overlay because Google Cloud requires active billing/prepayment to remove the development watermark.
+
+The project keeps **Dashboard V2 using Leaflet/OpenStreetMap** as a reliable non-billing fallback for the final live demo, while the Google Maps dashboard remains included as proof of Google Maps API integration.
 
 ---
 
@@ -763,9 +814,9 @@ paho-mqtt
 
 ## Opening the Dashboards
 
-### Dashboard V1
+Open dashboards using VS Code Live Server.
 
-Open using VS Code Live Server:
+### Dashboard V1
 
 ```text
 dashboard/dashboard_v1.html
@@ -773,16 +824,20 @@ dashboard/dashboard_v1.html
 
 ### Dashboard V2
 
-Open using VS Code Live Server:
-
 ```text
 dashboard/dashboard_v2.html
 ```
 
-Dashboard V2 reads from Firebase, so the updated full flow is:
+### Google Maps Dashboard
 
 ```text
-Sender_NoOLED → LoRa → Receiver_MQTT → MQTT → mqtt_to_firebase.py → Firebase → Dashboard V2
+dashboard/dashboard_google_maps.html
+```
+
+For the updated Week 3 MQTT version, the full flow is:
+
+```text
+Sender_NoOLED → LoRa → Receiver_MQTT → MQTT → mqtt_to_firebase.py → Firebase → Dashboard V2 / Google Maps Dashboard
 ```
 
 ---
@@ -857,6 +912,9 @@ Week 3 improves the architecture and adds the main project features beyond the b
 - Dashboard V2 shows inside/outside geofence status.
 - Dashboard V2 supports multi-asset selection through dropdown.
 - Dashboard V2 refreshes automatically.
+- Google Maps API dashboard version was added.
+- Google Maps dashboard displays live marker, history trail, and geofence circle.
+- Google Maps API integration was tested, but Google Cloud billing/prepayment is required to remove the “For development purposes only” watermark.
 - UTC timestamp, device ID, and received time are visible on dashboard.
 - Week 3 documentation files created.
 - Week 3 evidence screenshots collected.
@@ -879,6 +937,8 @@ dashboard-v2-geofence-inside.png
 dashboard-v2-geofence-warning.png
 dashboard-v2-history-trail.png
 dashboard-v2-status-panel.png
+dashboard-google-maps-api.png
+google-maps-billing-warning.png
 ```
 
 ---
@@ -888,10 +948,11 @@ dashboard-v2-status-panel.png
 | Week 3 Requirement | Status |
 |---|---|
 | Store historical coordinates | Completed |
-| Show recent path trail on map | Completed in Dashboard V2 |
+| Show recent path trail on map | Completed in Dashboard V2 and Google Maps dashboard |
 | Implement simple geofence | Completed |
 | Provide warning when asset leaves zone | Completed |
 | Run longer tests to check consistency | Initial validation completed; longer test documented |
+| Integrate Google Maps API into the dashboard | Completed with billing limitation documented |
 | Display asset location on map using live coordinates | Completed |
 | Implement real-time updates | Completed using automatic refresh |
 | Multi-asset support or simulated multi-device view | Completed through asset dropdown |
@@ -900,19 +961,27 @@ dashboard-v2-status-panel.png
 
 ---
 
-## Google Maps API Note
+## Final Demo Plan
 
-The original plan mentioned Google Maps API integration. For this academic prototype, **Leaflet.js with OpenStreetMap** was used instead.
+For the final moving demo, the sender node will be placed on a golf car and powered using a power bank.
 
-This avoids API key and billing requirements while still providing:
+After the sender firmware is uploaded, the sender does not need a COM connection or laptop.
 
-- live map visualization
-- marker tracking
-- history trail
-- geofence circle
-- inside/outside warning
+### Sender on Golf Car
 
-This fulfills the mapping requirements while keeping the system lightweight and easy to test.
+```text
+TTGO Sender + GPS Module + LoRa Antenna + Power Bank
+```
+
+The sender reads GPS coordinates and transmits LoRa packets.
+
+### Receiver in Presentation Hall
+
+```text
+TTGO Receiver → WiFi/MQTT → mqtt_to_firebase.py → Firebase → Dashboard
+```
+
+The receiver acts as the internet gateway. It receives LoRa packets from the moving golf car, publishes them through MQTT, and the backend uploads the records to Firebase.
 
 ---
 
@@ -956,6 +1025,12 @@ Dashboard V1 was kept as the Week 2 version.
 
 Dashboard V2 was added as the Week 3 version with history trail and geofence features.
 
+### 6. Google Maps Dashboard Added Separately
+
+A separate Google Maps dashboard was added because the Week 3 plan requires Google Maps API integration.
+
+Dashboard V2 remains the stable non-billing fallback dashboard for the final demo.
+
 ---
 
 ## Known Limitations
@@ -963,10 +1038,12 @@ Dashboard V2 was added as the Week 3 version with history trail and geofence fea
 - GPS fix may be slow or unavailable indoors.
 - MQTT currently uses a public broker for testing.
 - Firebase is configured for academic prototype use.
+- Google Maps JavaScript API requires active billing/prepayment to remove the development watermark.
 - Dashboard uses polling rather than direct MQTT WebSocket subscription.
 - Power consumption has not yet been fully measured.
 - TTN/LoRaWAN integration is not part of the current core implementation.
 - The history trail may look short when the sender is stationary or when GPS points are very close together.
+- LoRa range should be tested before the final golf car demo because walls and antenna placement can affect packet reception.
 
 ---
 
@@ -981,6 +1058,7 @@ Dashboard V2 was added as the Week 3 version with history trail and geofence fea
 - Add optional TTN/LoRaWAN integration if gateway access is available.
 - Improve dashboard styling and add configurable geofence controls.
 - Add direct MQTT WebSocket dashboard support.
+- Add a dashboard option for selecting or editing geofence radius from the UI.
 
 ---
 
