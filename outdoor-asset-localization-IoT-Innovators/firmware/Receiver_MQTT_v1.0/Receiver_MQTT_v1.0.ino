@@ -9,8 +9,8 @@
 // WiFi Configuration
 // =======================================================
 // Change these before uploading
-const char* WIFI_SSID = "Adam2";
-const char* WIFI_PASSWORD = "Adam2003";
+const char* WIFI_SSID = "Infinix SMART 10";
+const char* WIFI_PASSWORD = "youset123";
 
 // =======================================================
 // MQTT Configuration
