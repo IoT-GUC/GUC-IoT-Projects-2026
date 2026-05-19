@@ -57,13 +57,13 @@
               <!-- Device ID -->
               <div>
                 <label class="block text-xs font-semibold text-white/50 tracking-widest uppercase mb-2">
-                  Device ID
+                  Device ID (MAX Address)
                 </label>
                 <div class="relative">
                   <input
                     v-model="form.device_id"
                     type="text"
-                    placeholder="XXXXX-XXXXX-XXXXX"
+                    placeholder="XX:XX:XX:XX:XX:XX"
                     :disabled="loading"
                     class="w-full px-4 py-3 bg-[#1a1f2e] border rounded-lg text-white placeholder-white/20 text-sm outline-none transition-all duration-150 focus:ring-1 pr-24 font-mono disabled:opacity-50 disabled:cursor-not-allowed"
                     :class="errors.device_id
@@ -74,9 +74,9 @@
                     type="button"
                     :disabled="loading"
                     class="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-md transition-all duration-150 font-mono disabled:opacity-40 disabled:cursor-not-allowed"
-                    @click="generateUUID"
+                    @click="scanForDevice"
                   >
-                    Generate
+                    Scan
                   </button>
                 </div>
                 <p v-if="errors.device_id" class="mt-1.5 text-xs text-red-400">{{ errors.device_id }}</p>
@@ -124,6 +124,7 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
 import { useDevices } from '../../utils/hooks/devices'
+import { serialScan } from '../../utils/serial';
 
 const props = defineProps<{
   modelValue: boolean
@@ -162,8 +163,11 @@ function handleClose() {
   emit('update:modelValue', false)
 }
 
-function generateUUID() {
-  form.device_id = crypto.randomUUID()
+function scanForDevice() {
+  serialScan().then(({ mac, status }) => {
+    if (mac) form.device_id = mac
+    else errors.device_id = status
+  })
 }
 
 function validate(): boolean {

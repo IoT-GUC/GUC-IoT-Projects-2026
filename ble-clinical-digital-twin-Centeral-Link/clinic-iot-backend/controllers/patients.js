@@ -41,7 +41,7 @@ async function insertPatient(req, res) {
     try{
         const hospital_id = arrToBuffer(req.hospital.id.data);
         const { name, device_id: device_id_str } = req.body;
-        const device_id = uuidToBuffer(device_id_str);
+        const device_id = device_id_str;
         // Check if device exists and belongs to the hospital
         const existsResult = await db.query(devicesQueries.selectDeviceById, { hospital_id, device_id });
         if ( existsResult.error || !existsResult.rows.length) {

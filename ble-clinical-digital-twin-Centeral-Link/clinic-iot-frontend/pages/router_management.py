@@ -150,13 +150,13 @@ def layout():
                     html.Div("Click the map to set the router location",
                              style={"fontSize":"12px","color":"var(--text-muted)","marginBottom":"16px"}),
 
-                    html.Div("ROUTER ID", className="cl-label"),
+                    html.Div("ROUTER ID (MAC Address)", className="cl-label"),
                     html.Div(
                         style={"position":"relative","marginBottom":"16px"},
                         children=[
                             dcc.Input(id="new-router-id", type="text",
                                       className="cl-input",
-                                      placeholder="00000000-0000-0000-0000-000000000000",
+                                      placeholder="XX:XX:XX:XX:XX:XX",
                                       style={"fontFamily":"monospace","fontSize":"11px",
                                              "color":"var(--accent-light)","opacity":1,
                                              "cursor":"text","paddingRight":"70px"}),
@@ -377,7 +377,7 @@ def toggle_add_panel(n, style):
 )
 def add_router(n, rid, name, loc_x, loc_y, routers, routers_map):
     no_change = (dash.no_update, dash.no_update, dash.no_update, dash.no_update)
-    if not rid or not re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", rid):
+    if not rid or not re.fullmatch(r"^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$", rid):
         return (html.Div("Router ID is invalid.", className="alert-error",
                          style={"marginBottom":"8px"}),
                 dash.no_update, dash.no_update, *no_change)

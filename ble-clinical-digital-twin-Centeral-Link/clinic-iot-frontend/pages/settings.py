@@ -1,7 +1,7 @@
 import base64
 
 import dash
-from dash import dcc, html, callback, Input, Output, State
+from dash import dcc, html, callback, clientside_callback, ClientsideFunction, Input, Output, State
 import api
 
 dash.register_page(__name__, path="/settings", title="Settings — Central Link")
@@ -98,6 +98,23 @@ def layout():
                 html.Button("View Full Map", id="view-blueprint-btn",
                             className="btn-outline", style={"fontSize":"12px"},
                             disabled=not blueprint_url),
+            ]),
+        ]),
+
+        # BLE Scanner Authorization
+        html.Div(className="cl-card", style={"marginBottom":"20px"}, children=[
+            html.Div("BLE Scanner Device",
+                     style={"fontSize":"16px","fontWeight":700,"marginBottom":"4px"}),
+            html.Div("Authorize the USB scanner once so the Scan buttons on Device Management "
+                     "and Patient Tracking work without showing a port picker every time.",
+                     style={"fontSize":"12px","color":"var(--text-muted)","marginBottom":"20px"}),
+            html.Div(style={"display":"flex","alignItems":"center","gap":"12px"}, children=[
+                html.Button("Authorize Scanner", id="authorize-scanner-btn",
+                            n_clicks=0, className="btn-primary",
+                            style={"fontSize":"13px"}),
+                html.Div(id="scanner-auth-status",
+                         style={"fontSize":"12px","color":"var(--text-muted)"},
+                         children="Not yet authorized — click to pick your ESP32 serial port."),
             ]),
         ]),
 
@@ -331,6 +348,28 @@ def reset_records(n):
     ok = api.delete_records()
     return html.Div("All patient records have been reset." if ok else "Failed to reset records.",
                     className="alert-success" if ok else "alert-error")
+
+
+clientside_callback(
+    ClientsideFunction(namespace="serial", function_name="authorize"),
+    Output("scanner-auth-status", "children"),
+    Input("authorize-scanner-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+
+
+@callback(
+    Output("scanner-auth-status", "children", allow_duplicate=True),
+    Input("scanner-auth-status",  "children"),
+    prevent_initial_call=True,
+)
+def _style_auth_status(msg):
+    if msg == "ok":
+        return html.Span(
+            "✓ Scanner authorized — Scan buttons will connect automatically.",
+            style={"color": "var(--green)", "fontSize": "12px"},
+        )
+    return msg
 
 
 @callback(

@@ -129,22 +129,91 @@ def session_duration_fig(hourly: list) -> go.Figure:
     return fig
 
 
+_ROOM_COLORS = ["#1f6feb", "#3fb950", "#e3b341", "#f85149", "#9d5cf5", "#58a6ff", "#f0883e"]
+
+
+def _fmt_seconds(sec) -> str:
+    s = int(sec or 0)
+    if s < 60:   return f"{s}s"
+    if s < 3600: return f"{s // 60}m {s % 60}s"
+    return f"{s // 3600}h {(s % 3600) // 60}m"
+
+
+def rooms_occupancy_fig(occupancy: list) -> go.Figure:
+    """Grouped bar: unique patients per room per hour of day."""
+    rooms: dict[str, dict] = {}
+    for row in occupancy:
+        name = row.get("router_name", "Unknown")
+        rooms.setdefault(name, {"hours": [], "counts": []})
+        rooms[name]["hours"].append(int(row.get("hour_of_day", 0)))
+        rooms[name]["counts"].append(row.get("patient_count", 0))
+
+    fig = go.Figure()
+    for i, (name, d) in enumerate(rooms.items()):
+        pairs  = sorted(zip(d["hours"], d["counts"]))
+        hours  = [f"{h:02d}:00" for h, _ in pairs]
+        counts = [c for _, c in pairs]
+        fig.add_trace(go.Bar(
+            x=hours, y=counts, name=name,
+            marker_color=_ROOM_COLORS[i % len(_ROOM_COLORS)],
+        ))
+    fig.update_layout(**{**CHART_LAYOUT, "height": 260, "barmode": "group", "bargap": 0.2})
+    return fig
+
+
+def rooms_dwell_fig(dwell: list) -> go.Figure:
+    """Horizontal bar: rooms ranked by average dwell time (minutes)."""
+    fig = go.Figure()
+    if not dwell:
+        fig.update_layout(**CHART_LAYOUT)
+        return fig
+    names   = [r.get("router_name", "?") for r in reversed(dwell)]
+    avg_min = [round(r.get("avg_dwell_seconds", 0) / 60, 1) for r in reversed(dwell)]
+    fig.add_trace(go.Bar(
+        x=avg_min, y=names, orientation="h",
+        marker=dict(
+            color=avg_min,
+            colorscale=[[0, "#1f6feb"], [0.5, "#e3b341"], [1, "#f85149"]],
+            showscale=False,
+        ),
+        text=[f"{m}m" for m in avg_min],
+        textposition="outside",
+        name="Avg Dwell",
+    ))
+    h = max(180, 60 + len(names) * 36)
+    fig.update_layout(**{
+        **CHART_LAYOUT,
+        "height": h,
+        "showlegend": False,
+        "xaxis": dict(gridcolor="#21262d", zeroline=False,
+                      ticksuffix="m", tickfont=dict(size=9)),
+        "yaxis": dict(gridcolor="#21262d", zeroline=False, tickfont=dict(size=9)),
+        "margin": dict(l=90, r=40, t=10, b=30),
+    })
+    return fig
+
+
 def layout():
-    hourly_records  = api.get_hourly_records()
-    hourly_devices  = api.get_hourly_devices()
-    hourly_sessions = api.get_hourly_sessions_duration()
-    routers         = api.get_routers()
-    devices         = api.get_devices_with_info()
-    routers_map     = api.get_routers_map()
+    hourly_records    = api.get_hourly_records()
+    hourly_devices    = api.get_hourly_devices()
+    hourly_sessions   = api.get_hourly_sessions_duration()
+    routers           = api.get_routers()
+    devices           = api.get_devices_with_info()
+    routers_map       = api.get_routers_map()
+    rooms_occupancy   = api.get_rooms_hourly_occupancy()
+    rooms_dwell       = api.get_rooms_dwell_time()
+    patients_room_stats = api.get_patients_room_stats()
 
     total_nodes    = len(devices)
     active_routers = sum(1 for r in routers_map if r.get("connected_devices_count", 0) > 0)
     total_routers  = len(routers)
     network_load   = round((active_routers / total_routers * 100) if total_routers else 0, 1)
 
-    trend_fig    = records_trend_fig(hourly_records)
-    bar_fig      = devices_bar_fig(hourly_devices)
-    session_fig  = session_duration_fig(hourly_sessions)
+    trend_fig      = records_trend_fig(hourly_records)
+    bar_fig        = devices_bar_fig(hourly_devices)
+    session_fig    = session_duration_fig(hourly_sessions)
+    occupancy_fig  = rooms_occupancy_fig(rooms_occupancy)
+    dwell_fig      = rooms_dwell_fig(rooms_dwell)
 
     device_rows = []
     for d in devices[:20]:
@@ -247,6 +316,75 @@ def layout():
                 ]),
             ],
         ),
+
+        # ── Room Analytics ────────────────────────────────────────────────────
+        html.Div(style={"marginBottom": "20px"}, children=[
+            html.Div("Room Analytics", className="page-title",
+                     style={"fontSize": "15px", "marginBottom": "14px"}),
+
+            # Two charts side by side
+            html.Div(
+                style={"display": "grid", "gridTemplateColumns": "1fr 1fr",
+                       "gap": "16px", "marginBottom": "16px"},
+                children=[
+                    html.Div(className="cl-card", children=[
+                        html.Div(className="section-header", children=[
+                            html.Div("Hourly Room Occupancy", className="section-title"),
+                            html.Div("Unique patients per room per hour of day",
+                                     style={"fontSize": "10px", "color": "var(--text-muted)"}),
+                        ]),
+                        dcc.Graph(figure=occupancy_fig, config={"displayModeBar": False}),
+                    ]),
+                    html.Div(className="cl-card", children=[
+                        html.Div(className="section-header", children=[
+                            html.Div("Room Dwell Time Ranking", className="section-title"),
+                            html.Div("Average patient dwell time per room (highest first)",
+                                     style={"fontSize": "10px", "color": "var(--text-muted)"}),
+                        ]),
+                        dcc.Graph(figure=dwell_fig, config={"displayModeBar": False}),
+                    ]),
+                ],
+            ),
+
+            # Patient-room breakdown table
+            html.Div(className="cl-card", children=[
+                html.Div(className="section-header", children=[
+                    html.Div("Patient × Room Breakdown", className="section-title"),
+                    html.Div("Time each patient spent in each room",
+                             style={"fontSize": "11px", "color": "var(--text-muted)"}),
+                ]),
+                html.Table(
+                    className="cl-table",
+                    children=[
+                        html.Thead(html.Tr([
+                            html.Th("PATIENT"),
+                            html.Th("ROOM"),
+                            html.Th("VISITS"),
+                            html.Th("TOTAL TIME"),
+                            html.Th("AVG PER VISIT"),
+                        ])),
+                        html.Tbody([
+                            html.Tr([
+                                html.Td(r.get("patient_name", "—"), style={"fontWeight": 600}),
+                                html.Td(r.get("router_name", "—")),
+                                html.Td(str(r.get("visit_count", 0))),
+                                html.Td(_fmt_seconds(r.get("total_seconds", 0))),
+                                html.Td(_fmt_seconds(r.get("avg_seconds", 0)),
+                                        style={"color": "var(--text-muted)"}),
+                            ])
+                            for r in patients_room_stats[:50]
+                        ] or [html.Tr(html.Td("No data.", colSpan=5,
+                                              style={"color": "var(--text-muted)",
+                                                     "padding": "20px 14px"}))]),
+                    ],
+                ),
+                html.Div(
+                    f"Showing {min(50, len(patients_room_stats))} of {len(patients_room_stats)} rows",
+                    style={"padding": "10px 14px", "fontSize": "11px",
+                           "color": "var(--text-muted)"},
+                ),
+            ]),
+        ]),
 
         # Tracked users table
         html.Div(className="cl-card", children=[

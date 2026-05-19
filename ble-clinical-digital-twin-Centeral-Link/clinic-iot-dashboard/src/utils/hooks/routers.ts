@@ -75,15 +75,37 @@ export function useRoutersMap() {
   return { routersMap, loading, error, fetchRoutersMap, fetchRoutersMapSilently }
 }
 
+export function useActiveRouters() {
+  const routers = ref<Router[] | undefined>(undefined);
+  const loading = ref(false)
+  const error = ref<string | undefined>(undefined)
+
+  async function fetchActiveRouters(): Promise<void> {
+    loading.value = true
+    error.value = undefined
+    try {
+      const response = await getData<{ routers: Router[] }>('/routers/active')
+      routers.value = response.routers
+    } catch (err) {
+      error.value = (err as Error).message
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { routers, loading, error, fetchActiveRouters }
+}
+
 export function useRouterStatus() {
-  const { routersMap, loading, error, fetchRoutersMap } = useRoutersMap()
+  const { routers, loading, error, fetchActiveRouters } = useActiveRouters()
   const routersStatus = computed(() => {
-    if (!routersMap.value) return undefined
+    if (!routers.value) return undefined
     const status = {} as Record<string, 'ACTIVE' | 'IDLE'>
-    routersMap.value?.forEach(r => status[r.id] = r.connected_devices_count > 0 ? 'ACTIVE' : 'IDLE')
+    routers.value?.forEach(r => status[r.id] = 'ACTIVE')
     return status
   })
-  return { routersStatus, loading, error, fetchRoutersStatus: fetchRoutersMap }
+  return { routersStatus, loading, error, fetchRoutersStatus: fetchActiveRouters }
 }
 
 export function useRouter(id: string) {

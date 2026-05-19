@@ -12,8 +12,8 @@ const REALTIME_PERIOD = Number(import.meta.env.REALTIME_PERIOD || 60);
 
 const { routersMap, loading, error, fetchRoutersMap, fetchRoutersMapSilently } = useRoutersMap()
 
-const activeRouters = computed(() => routersMap.value?.length)
-const activeDevices = computed(() => routersMap.value ?
+const routersCount = computed(() => routersMap.value?.length)
+const devicesCount = computed(() => routersMap.value ?
     routersMap.value.reduce((acc, curr) => acc + curr.connected_devices_count, 0)
     : undefined)
 
@@ -40,14 +40,14 @@ onUnmounted(() => {
         <DashboardHeader />
         <div class="p-8 flex flex-col gap-8 items-stretch">
             <PlaceHolder v-if="loading" class="h-32" />
-            <div class="flex gap-6">
-                <Card title="Active Routers" :icon="IconRouter" :text="activeRouters" icon-color="#259DF4"
+            <div class="flex gap-6" v-else>
+                <Card title="Routers Count" :icon="IconRouter" :text="routersCount" icon-color="#259DF4"
                     icon-bg="#259DF416" />
-                <Card title="Active Devices" :icon="IconDevice" :text="activeDevices" icon-color="#10B981"
+                <Card title="Patients Count" :icon="IconDevice" :text="devicesCount" icon-color="#10B981"
                     icon-bg="#10B98116" />
             </div>
             <PlaceHolder v-if="loading" class="h-100" />
-            <div>
+            <div v-else>
                 <BlueprintView :routers-map="routersMap" />
             </div>
         </div>

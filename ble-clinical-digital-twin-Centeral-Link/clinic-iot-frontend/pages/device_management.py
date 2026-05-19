@@ -1,7 +1,7 @@
 import re
 
 import dash
-from dash import dcc, html, callback, Input, Output, State, ctx
+from dash import dcc, html, callback, clientside_callback, ClientsideFunction, Input, Output, State, ctx
 import api
 
 dash.register_page(__name__, path="/devices", title="Device Management — Central Link")
@@ -60,8 +60,10 @@ def layout():
     free        = len(devices) - assigned
 
     return html.Div([
-        dcc.Store(id="dm-devices-data",  data=devices),
-        dcc.Store(id="dm-selected",      data=None),
+        dcc.Store(id="dm-devices-data",   data=devices),
+        dcc.Store(id="dm-selected",       data=None),
+        dcc.Store(id="dm-serial-result",  data=None),
+        dcc.Store(id="dm-edit-device-id", data=None),
 
         html.Div(style={"display":"flex","gap":"12px","alignItems":"center","marginBottom":"24px"}, children=[
             dcc.Input(id="device-search", type="text", debounce=True,
@@ -112,6 +114,29 @@ def layout():
                          children=build_cards(devices)),
             ]),
 
+            # Edit Device panel (rename)
+            html.Div(id="edit-device-panel",
+                     style={"display":"none","width":"300px","flexShrink":0}, children=[
+                html.Div(className="cl-card", children=[
+                    html.Div(style={"display":"flex","justifyContent":"space-between",
+                                    "alignItems":"center","marginBottom":"4px"}, children=[
+                        html.Div("Edit Device",
+                                 style={"fontSize":"18px","fontWeight":700}),
+                        html.Button("✕", id="close-edit-device", n_clicks=0,
+                                    className="btn-outline",
+                                    style={"padding":"2px 10px","fontSize":"14px"}),
+                    ]),
+                    html.Div("Rename this BLE device",
+                             style={"fontSize":"12px","color":"var(--text-muted)","marginBottom":"20px"}),
+                    html.Div("DEVICE NAME", className="cl-label"),
+                    dcc.Input(id="dm-edit-name", type="text", placeholder="Device Name",
+                              className="cl-input", style={"marginBottom":"8px"}),
+                    html.Div(id="dm-edit-msg", style={"marginBottom":"8px"}),
+                    html.Button("Save Name", id="dm-save-name-btn", n_clicks=0,
+                                className="btn-primary", style={"width":"100%"}),
+                ]),
+            ]),
+
             # Add Device panel
             html.Div(id="add-device-panel",
                      style={"display":"none","width":"300px","flexShrink":0}, children=[
@@ -121,18 +146,37 @@ def layout():
                     html.Div("Register a new BLE device",
                              style={"fontSize":"12px","color":"var(--text-muted)","marginBottom":"20px"}),
 
-                    html.Div("DEVICE ID", className="cl-label"),
                     html.Div(
-                        style={"position":"relative","marginBottom":"20px"},
+                        style={"display":"flex","justifyContent":"space-between",
+                               "alignItems":"center","marginBottom":"6px"},
+                        children=[
+                            html.Div("DEVICE ID (MAC Address)", className="cl-label",
+                                     style={"marginBottom":0}),
+                            html.Div(style={"display":"flex","gap":"6px"}, children=[
+                                html.Button("⟳ Scan", id="scan-device-btn", n_clicks=0,
+                                            className="btn-outline",
+                                            style={"fontSize":"10px","padding":"3px 10px"}),
+                                html.Button("✕ Stop", id="stop-scan-btn", n_clicks=0,
+                                            className="btn-outline",
+                                            style={"fontSize":"10px","padding":"3px 10px",
+                                                   "color":"#f85149","display":"none"}),
+                            ]),
+                        ]
+                    ),
+                    html.Div(
+                        style={"position":"relative","marginBottom":"4px"},
                         children=[
                             dcc.Input(id="new-device-id", type="text",
                                       className="cl-input",
-                                      placeholder="00000000-0000-0000-0000-000000000000",
+                                      placeholder="XX:XX:XX:XX:XX:XX",
                                       style={"fontFamily":"monospace","fontSize":"11px",
                                              "color":"var(--accent-light)","opacity":1,
-                                             "cursor":"text","paddingRight":"70px"}),
+                                             "cursor":"text"}),
                         ],
                     ),
+                    html.Div(id="dm-scan-status",
+                             style={"fontSize":"10px","minHeight":"16px",
+                                    "marginBottom":"16px"}),
 
                     html.Div("DEVICE NAME", className="cl-label"),
                     dcc.Input(id="new-device-name", type="text", placeholder="Device Name",
@@ -170,7 +214,7 @@ def toggle_add_panel(n, style):
 )
 def add_device(_, did, name, devices):
     no_updates = (dash.no_update, dash.no_update, dash.no_update, dash.no_update)
-    if not did or not re.fullmatch(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", did):
+    if not did or not re.fullmatch(r"^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$", did):
         return (html.Div("Device ID is not valid.", className="alert-error",
                          style={"marginBottom":"8px"}),
                 *no_updates)
@@ -217,6 +261,23 @@ def release_device(release_clicks, devices):
             dash.no_update, dash.no_update)
 
 
+clientside_callback(
+    ClientsideFunction(namespace="serial", function_name="scan_device"),
+    Output("new-device-id",  "value",    allow_duplicate=True),
+    Output("dm-scan-status", "children", allow_duplicate=True),
+    Input("scan-device-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+
+
+clientside_callback(
+    ClientsideFunction(namespace="serial", function_name="stop_scan"),
+    Output("dm-scan-status", "children", allow_duplicate=True),
+    Input("stop-scan-btn",   "n_clicks"),
+    prevent_initial_call=True,
+)
+
+
 @callback(
     Output("device-cards-grid", "children"),
     Output("df-all",      "className"),
@@ -236,3 +297,56 @@ def filter_cards(n_all, n_free, n_assigned, search, devices):
     cards  = build_cards(devices or [], active, search or "")
     cls    = lambda k: "btn-primary" if active==k else "btn-outline"
     return cards, cls("all"), cls("free"), cls("assigned")
+
+
+@callback(
+    Output("edit-device-panel",  "style"),
+    Output("dm-edit-name",       "value"),
+    Output("dm-edit-device-id",  "data"),
+    Input({"type":"dm-info-btn","index":dash.ALL}, "n_clicks"),
+    Input("close-edit-device",   "n_clicks"),
+    State("dm-devices-data",     "data"),
+    prevent_initial_call=True,
+)
+def toggle_edit_panel(info_clicks, close_n, devices):
+    triggered = ctx.triggered_id
+    hidden = {"display":"none","width":"300px","flexShrink":0}
+    visible = {"display":"block","width":"300px","flexShrink":0}
+    if triggered == "close-edit-device":
+        return hidden, dash.no_update, None
+    if not triggered or not any(info_clicks or []):
+        return dash.no_update, dash.no_update, dash.no_update
+    did    = triggered["index"]
+    device = next((d for d in (devices or []) if d.get("id") == did), None)
+    if not device:
+        return dash.no_update, dash.no_update, dash.no_update
+    return visible, device.get("name", ""), did
+
+
+@callback(
+    Output("dm-edit-msg",       "children"),
+    Output("device-cards-grid", "children", allow_duplicate=True),
+    Output("dm-devices-data",   "data",     allow_duplicate=True),
+    Input("dm-save-name-btn",   "n_clicks"),
+    State("dm-edit-device-id",  "data"),
+    State("dm-edit-name",       "value"),
+    State("dm-devices-data",    "data"),
+    prevent_initial_call=True,
+)
+def save_device_name(n, device_id, name, devices):
+    if not n or not device_id:
+        return dash.no_update, dash.no_update, dash.no_update
+    name = (name or "").strip()
+    if len(name) < 2:
+        return (html.Div("Name must be at least 2 characters.", className="alert-error",
+                         style={"marginBottom":"4px"}),
+                dash.no_update, dash.no_update)
+    result, err = api.rename_device(device_id, name)
+    if result is None:
+        return (html.Div(err or "Rename failed.", className="alert-error",
+                         style={"marginBottom":"4px"}),
+                dash.no_update, dash.no_update)
+    updated = api.get_devices()
+    return (html.Div(f"Renamed to '{name}'.", className="alert-success",
+                     style={"marginBottom":"4px"}),
+            build_cards(updated), updated)
