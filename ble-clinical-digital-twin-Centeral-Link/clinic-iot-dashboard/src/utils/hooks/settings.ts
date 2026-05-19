@@ -39,7 +39,7 @@ export function useSettings() {
     loading.value = true
     error.value = undefined
     try {
-      await deleteData<void>('/settings/records')
+      await deleteData<void>('/settings/records', { confirm: true })
     } catch (err) {
       error.value = (err as Error).message
       throw err

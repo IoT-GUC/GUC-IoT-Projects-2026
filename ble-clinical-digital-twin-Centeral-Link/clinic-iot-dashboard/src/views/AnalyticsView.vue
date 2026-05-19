@@ -14,8 +14,6 @@ const { records: hourlyRecords, loading: hourlyRecordsLoading, fetchHourlyRecord
 const { sessions: hourlySessionsDuration, loading: hourlySessionsDurationLoading, fetchHourlySessionsDuration } = useHourlySessionsDuration();
 const { routersMap, loading: routersMapLoading, fetchRoutersMap } = useRoutersMap();
 
-console.log(hourlyRecords, hourlySessionsDuration)
-
 onMounted(() => {
     fetchHourlyPatients();
     fetchHourlyRecords();
@@ -28,13 +26,16 @@ onMounted(() => {
 <template>
     <MainLayout>
         <div class="p-8 flex flex-col gap-8 items-stretch">
+            <div class="grid grid-cols-2 gap-4">
+                <HourlyPatientsChart v-if="hourlyPatients" :data="hourlyPatients!" />
+                <HourlyRecordsChart v-if="hourlyRecords" :data="hourlyRecords!" />
+            </div>
+
             <PlaceHolder v-if="routersMapLoading" class="h-180" />
             <RoutersMap v-if="routersMap" :entries="routersMap!" />
 
             <PlaceHolder v-if="hourlyPatientsLoading || hourlyRecordsLoading || hourlySessionsDurationLoading"
                 class="h-180" />
-            <HourlyPatientsChart v-if="hourlyPatients" :data="hourlyPatients!" />
-            <HourlyRecordsChart v-if="hourlyRecords" :data="hourlyRecords!" />
             <HourlySessionDurationChart v-if="hourlySessionsDuration" :data="hourlySessionsDuration!" />
         </div>
     </MainLayout>

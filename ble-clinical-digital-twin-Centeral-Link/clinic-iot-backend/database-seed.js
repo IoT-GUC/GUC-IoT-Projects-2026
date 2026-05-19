@@ -13,6 +13,7 @@ const routerQueries = require("./controllers/queries/routers");
 const deviceQueries = require("./controllers/queries/devices");
 const db = require("./services/oracle-db");
 const { arrToBuffer, uuidToBuffer } = require("./controllers/converters/converters");
+const { generateMac } = require("./utils/mac");
 
 async function clearDatabase() {
     console.log('Clearing database...');
@@ -85,7 +86,7 @@ async function seedRouters(hospital_id) {
     const routersIds = [];
     for (let i = 0; i < nRouters; i++) {
         const routerData = {
-            router_id: uuidToBuffer(uuid.v4()),
+            router_id: generateMac(),
             hospital_id,
             name: `Seed Router ${i + 1}`,
             location_x: Math.random(),
@@ -138,7 +139,7 @@ async function seedDevices(hospital_id, patient_ids) {
     const devicesIds = [];
     for (let i = 0; i < patient_ids.length; i++) {
         const deviceData = {
-            device_id: uuidToBuffer(uuid.v4()),
+            device_id: generateMac(),
             hospital_id,
             name: `Seed Device ${i + 1}`,
         };

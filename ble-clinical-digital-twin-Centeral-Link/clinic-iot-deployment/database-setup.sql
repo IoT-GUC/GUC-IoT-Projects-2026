@@ -28,6 +28,8 @@ CREATE TABLE routers (
     CONSTRAINT uq_router UNIQUE (hospital_id, name)
 );
 
+ALTER TABLE routers ADD last_active TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+
 CREATE TABLE devices (
     id RAW (16) DEFAULT SYS_GUID () PRIMARY KEY,
     hospital_id RAW (16),

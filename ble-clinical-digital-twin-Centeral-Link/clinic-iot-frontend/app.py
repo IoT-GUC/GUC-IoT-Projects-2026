@@ -32,6 +32,7 @@ NAV_ITEMS = [
     ("◉", "Device Management",  "/devices"),
     ("◎", "Patient Tracking",   "/patients"),
     ("⟁", "Analytics",          "/analytics"),
+    ("📋", "Reports",            "/reports"),
     ("⚙", "Settings",           "/settings"),
 ]
 

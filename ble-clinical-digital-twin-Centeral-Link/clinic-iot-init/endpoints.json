@@ -122,6 +122,22 @@
             }
         },
         {
+            "path": "/routers/active",
+            "method": "GET",
+            "description": "Get a list of all active routers that have sended data in the last {ROUTER_ACTIVE_INTERVAL} seconds.",
+            "response": {
+                "active_routers": [
+                    {
+                        "id": "UUID",
+                        "name": "VarChar(255)",
+                        "location_x": "Float",
+                        "location_y": "Float",
+                        "last_active": "Timestamp"
+                    }
+                ]
+            }
+        },
+        {
             "path": "/routers/{id}",
             "method": "GET",
             "description": "Get details of a specific router by its ID.",

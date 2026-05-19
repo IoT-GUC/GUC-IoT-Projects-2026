@@ -80,10 +80,11 @@ export async function putFile<T>(endpoint: string, file: File, fieldName = 'imag
   return handleResponse<T>(response)
 }
 
-export async function deleteData<T>(endpoint: string): Promise<T> {
+export async function deleteData<T>(endpoint: string, data: unknown = undefined): Promise<T> {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: 'DELETE',
     headers: buildHeaders(endpoint),
+    body: data ? JSON.stringify(data) : undefined,
   })
   return handleResponse<T>(response)
 }

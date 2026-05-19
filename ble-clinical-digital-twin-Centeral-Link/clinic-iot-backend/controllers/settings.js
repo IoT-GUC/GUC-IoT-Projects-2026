@@ -114,6 +114,9 @@ async function getBlueprint(req, res) {
 }
 
 async function resetRecords(req, res) {
+    if (req.body?.confirm !== true) {
+        return res.status(400).json({ error: 'Must send { "confirm": true } to reset records' });
+    }
     try {
         const hospital_id = arrToBuffer(req.hospital.id.data);
         const result = await db.query(patientQueries.deletePatients, { hospital_id }, { autoCommit: true });

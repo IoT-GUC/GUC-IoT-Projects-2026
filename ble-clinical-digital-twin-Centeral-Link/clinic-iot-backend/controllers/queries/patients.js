@@ -15,7 +15,7 @@ const selectPatientById = `
 const selectPatientRoutersSessions = `
     SELECT
         raw_to_uuid(patient_id) AS "patient_id",
-        raw_to_uuid(router_id) AS "router_id",
+        router_id AS "router_id",
         routers.name AS "router_name",
         start_time AS "start_time",
         duration_seconds AS "duration"

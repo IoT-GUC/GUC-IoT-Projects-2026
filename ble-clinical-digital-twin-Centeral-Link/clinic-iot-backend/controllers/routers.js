@@ -1,6 +1,9 @@
+const env = process.env;
 const queries = require("../controllers/queries/routers");
 const db = require("../services/oracle-db");
 const { arrToBuffer, uuidToBuffer, bufferToUuid } = require("../controllers/converters/converters");
+
+const ROUTER_ACTIVE_INTERVAL = Number(env.ROUTER_ACTIVE_INTERVAL);
 
 async function getAllRouters(req, res) {
     try {
@@ -31,7 +34,7 @@ async function getRoutersMap(req, res) {
 async function getRouterById(req, res) {
     try {
         const hospital_id = arrToBuffer(req.hospital.id.data);
-        const router_id = uuidToBuffer(req.params.id);
+        const router_id = req.params.id;
         const result = await db.query(queries.selectRouterById, { router_id, hospital_id });
         if (result.error) {
             throw result.error;
@@ -53,7 +56,7 @@ async function getRouterById(req, res) {
 async function getRouterConnectedDevices(req, res) {
     try {
         const hospital_id = arrToBuffer(req.hospital.id.data);
-        const router_id = uuidToBuffer(req.params.id);
+        const router_id = req.params.id;
         const result = await db.query(queries.selectRouterConnectedDevices, { router_id, hospital_id }, { maxRows: 100 });
         if (result.error) {
             throw result.error;
@@ -67,7 +70,7 @@ async function getRouterConnectedDevices(req, res) {
 async function getRouterHourlySessionsDuration(req, res) {
     try {
         const hospital_id = arrToBuffer(req.hospital.id.data);
-        const router_id = uuidToBuffer(req.params.id);
+        const router_id = req.params.id;
         // Check if router exists and belongs to the hospital
         const existsResult = await db.query(queries.selectRouterById, { router_id, hospital_id });
         if (existsResult.error || !existsResult.rows.length) {
@@ -85,6 +88,19 @@ async function getRouterHourlySessionsDuration(req, res) {
     }
 }
 
+async function getActiveRouters(req, res) {
+    try {
+        const hospital_id = arrToBuffer(req.hospital.id.data);
+        const result = await db.query(queries.selectActiveRouters, { hospital_id, active_interval: ROUTER_ACTIVE_INTERVAL });
+        if (result.error) {
+            throw result.error;
+        }
+        res.json({ routers: result.rows });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to get active routers' });
+    }
+}
+
 async function insertRouter(req, res) {
     try {
         const hospital_id = arrToBuffer(req.hospital.id.data);
@@ -95,7 +111,7 @@ async function insertRouter(req, res) {
             return res.status(400).json({ error: 'Router name already exists' });
         }
         // Insert router
-        const result = await db.query(queries.insertRouter, { hospital_id, router_id: uuidToBuffer(router_id), name, location_x, location_y }, { autoCommit: true });
+        const result = await db.query(queries.insertRouter, { hospital_id, router_id, name, location_x, location_y }, { autoCommit: true });
         if (result.error) {
             throw result.error;
         }
@@ -108,6 +124,7 @@ async function insertRouter(req, res) {
 module.exports = {
     getAllRouters,
     getRoutersMap,
+    getActiveRouters,
     getRouterById,
     getRouterConnectedDevices,
     getRouterHourlySessionsDuration,

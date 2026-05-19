@@ -18,7 +18,7 @@ onMounted(() => fetchBlueprint())
     <div class="relative">
         <img class="w-full" :src="blueprintUrl || '/blueprint.png'" />
         <div v-for="item in items" :key="item.id" class="absolute z-10"
-            :style="{ top: `${item.location_x * 100}%`, left: `${item.location_y * 100}%` }">
+            :style="{ left: `${item.location_x * 100}%`, top: `${item.location_y * 100}%` }">
             <div
                 class="flex items-center gap-2 bg-slate-800/80 backdrop-blur-md border border-white/10 rounded-full py-1 pr-3 pl-1.5 shadow-lg shadow-black/20 hover:scale-105 transition-transform cursor-pointer">
                 <div class="relative flex h-3 w-3">

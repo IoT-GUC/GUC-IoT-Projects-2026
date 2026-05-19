@@ -21,7 +21,7 @@ const filteredRouters = computed(() => {
     if (searchQuery.value)
         res = routers.value?.filter(router => router.name.toLowerCase().includes(searchQuery.value.toLowerCase()));
     if (routersStatus.value && selectedStatus.value !== 'all')
-        res = res?.filter(router => routersStatus.value?.[router.id] === selectedStatus.value)
+        res = res?.filter(router => (routersStatus.value?.[router.id] || 'IDLE') === selectedStatus.value)
     return res
 });
 

@@ -1,11 +1,12 @@
-const { validate } = require('uuid');
+const { isValidMac } = require('../../utils/mac');
+
 
 function validateRouter(req, res, next) {
     const { router_id,name, location_x, location_y } = req.body;
     if (!router_id || !name || !location_x || !location_y) {
         return res.status(400).json({ message: "All fields are required" });
     }
-    if (!validate(router_id)) {
+    if (!isValidMac(router_id)) {
         return res.status(400).json({ message: "Invalid router ID" });
     }
     if (typeof name !== "string" || name.trim().length < 2 || name.length > 100) {

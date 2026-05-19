@@ -77,6 +77,14 @@
                       {{ device.name }}
                     </option>
                 </select>
+                <button
+                    type="button"
+                    :disabled="loading"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-md transition-all duration-150 font-mono disabled:opacity-40 disabled:cursor-not-allowed"
+                    @click="scanForDevice"
+                  >
+                    Scan
+                  </button>
                 </div>
                 <p v-if="errors.device_id" class="mt-1.5 text-xs text-red-400">{{ errors.device_id }}</p>
               </div>
@@ -124,6 +132,7 @@
 import { computed, onMounted, reactive, watch } from 'vue'
 import { usePatients } from '../../utils/hooks/patients'
 import { useDevices } from '../../utils/hooks/devices';
+import { serialScan } from '../../utils/serial';
 
 const props = defineProps<{
   modelValue: boolean
@@ -165,8 +174,16 @@ function handleClose() {
   emit('update:modelValue', false)
 }
 
-function generateUUID() {
-  form.device_id = crypto.randomUUID()
+function scanForDevice() {
+  serialScan().then(({ mac, status }) => {
+    if (mac) {
+      const device = freeDevices.value?.find(device => device.id === mac)
+      if (device) form.device_id = device.id
+    }
+    else {
+      errors.device_id = status
+    }
+  })
 }
 
 function validate(): boolean {

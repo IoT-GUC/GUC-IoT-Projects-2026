@@ -2,6 +2,7 @@ const { Router } = require("express");
 const {
     getAllRouters,
     getRoutersMap,
+    getActiveRouters,
     getRouterById,
     getRouterConnectedDevices,
     getRouterHourlySessionsDuration,
@@ -13,6 +14,7 @@ const router = new Router();
 
 router.get("/", getAllRouters);
 router.get("/map", getRoutersMap);
+router.get("/active", getActiveRouters);
 router.get("/:id", getRouterById);
 router.get("/:id/devices", getRouterConnectedDevices);
 router.get("/:id/hourly-sessions-duration", getRouterHourlySessionsDuration);

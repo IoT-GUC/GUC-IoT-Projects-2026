@@ -1,6 +1,6 @@
 const selectDevices = `
     SELECT
-        raw_to_uuid(id) AS "id",
+        id AS "id",
         name AS "name",
         raw_to_uuid(patient_id) AS "patient_id"
     FROM devices
@@ -9,9 +9,9 @@ const selectDevices = `
 
 const selectDevicesRouters = `
     SELECT
-        raw_to_uuid(id) AS "id",
+        id AS "id",
         name AS "name",
-        raw_to_uuid(router_id) AS "router_id",
+        router_id AS "router_id",
         router_name AS "router_name",
         holder_name AS "holder_name",
         last_record_timestamp AS "last_record_timestamp"
@@ -43,6 +43,21 @@ const updateDeviceHolder = `
     AND hospital_id = :hospital_id
 `;
 
+const updateDeviceName = `
+    UPDATE devices
+    SET name = :name
+    WHERE id = :device_id
+    AND hospital_id = :hospital_id
+`;
+
+// Name uniqueness check that excludes the device being renamed
+const selectDeviceByNameExcluding = `
+    SELECT id FROM devices
+    WHERE name = :name
+    AND hospital_id = :hospital_id
+    AND id != :device_id
+`;
+
 const deleteDevices = `
     DELETE FROM devices
     WHERE hospital_id = :hospital_id
@@ -54,7 +69,9 @@ module.exports = {
     selectDevicesRouters,
     selectDeviceById,
     selectDeviceByName,
+    selectDeviceByNameExcluding,
     insertDevice,
     updateDeviceHolder,
+    updateDeviceName,
     deleteDevices
 };

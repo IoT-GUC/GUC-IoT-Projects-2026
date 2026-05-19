@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import Header from '../components/shared/Header.vue';
 import MainLayout from '../components/shared/layout/MainLayout.vue';
 import PlaceHolder from '../components/shared/layout/PlaceHolder.vue';
@@ -9,6 +9,7 @@ import type { DeviceWithRouterInfo, Patient } from '@/utils/types';
 import PatientsTable from '@/components/patient-tracking/PatientsTable.vue';
 import { useDevicesPatients, useDevicesWithRouterInfo } from '@/utils/hooks/devices';
 import PatientDetailsModal, { type PatientDetails } from '@/components/patient-tracking/PatientDetailsModal.vue';
+const REALTIME_PERIOD = Number(import.meta.env.REALTIME_PERIOD || 60);
 
 const { devices, loading, fetchDevicesWithRouterInfo } = useDevicesWithRouterInfo();
 const { devicesPatients, loading: devicesPatientsLoading, error: devicesPatientsError, fetchDevicesPatients } = useDevicesPatients();
@@ -51,10 +52,23 @@ function addNewPatientSuccess(){
     fetchDevicesPatients();
 }
 
+let interval: number | undefined= undefined
+
 onMounted(() => {
     fetchDevicesWithRouterInfo();
     fetchDevicesPatients();
-});
+    interval = setInterval(() => {
+        fetchDevicesWithRouterInfo();
+        fetchDevicesPatients();
+        console.log('fetchDevicesWithRouterInfo')
+    }, REALTIME_PERIOD * 1000)
+})
+
+onUnmounted(() => {
+    if (interval) {
+        clearInterval(interval)
+    }
+})
 
 </script>
 

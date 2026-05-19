@@ -56,13 +56,13 @@
               <!-- Router ID -->
               <div>
                 <label class="block text-xs font-semibold text-white/50 tracking-widest uppercase mb-2">
-                  Router ID
+                  Router ID (MAC Address)
                 </label>
                 <div class="relative">
                   <input
                     v-model="form.router_id"
                     type="text"
-                    placeholder="e.g. Node #002"
+                    placeholder="XX:XX:XX:XX:XX:XX"
                     class="w-full px-4 py-3 bg-[#1a1f2e] border rounded-lg text-white placeholder-white/20 text-sm outline-none transition-all duration-150 focus:ring-1 pr-24"
                     :class="errors.router_id
                       ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30'
@@ -71,7 +71,7 @@
                   <button
                     type="button"
                     class="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-md transition-all duration-150 font-mono"
-                    @click="generateUUID"
+                    @click="generateRandomMAC"
                   >
                     Generate
                   </button>
@@ -135,6 +135,7 @@ import { reactive, watch, onMounted } from 'vue'
 import RouterLocationPicker, { type Location } from './RouterLocationPicker.vue'
 import { useRouters } from '../../utils/hooks/routers'
 import { useBlueprint } from '../../utils/hooks/settings';
+import { generateMac } from '../../utils/mac';
 
 const props = defineProps<{
   modelValue: boolean
@@ -183,8 +184,8 @@ function handleClose() {
   emit('update:modelValue', false)
 }
 
-function generateUUID() {
-  form.router_id = crypto.randomUUID()
+function generateRandomMAC() {
+  form.router_id = generateMac()
 }
 
 function validate(): boolean {
