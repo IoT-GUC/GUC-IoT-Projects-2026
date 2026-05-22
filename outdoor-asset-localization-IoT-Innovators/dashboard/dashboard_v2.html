@@ -329,6 +329,33 @@
           <strong>assets/&lt;deviceID&gt;/history</strong>.
         </p>
       </div>
+
+      <div class="section">
+        <h2>Transmission Health</h2>
+
+        <div id="transmissionStatusBox" class="status-box status-stale">
+          Waiting for packet data...
+        </div>
+
+        <div class="data-row">
+          <span>Latest Packet</span>
+          <span id="latestPacketCount">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>Records Checked</span>
+          <span id="recordsChecked">0</span>
+        </div>
+
+        <div class="data-row">
+          <span>Missing Packets</span>
+          <span id="missingPackets">0</span>
+        </div>
+
+        <p class="small-note">
+          Week 4 additional feature: checks packet_count values in Firebase history to detect possible LoRa/MQTT data gaps.
+        </p>
+      </div>
     </aside>
 
     <section id="map"></section>
@@ -348,6 +375,7 @@
     // Dashboard Configuration
     // ============================================================
     const REFRESH_INTERVAL_MS = 5000;
+    const ASSET_LIST_REFRESH_INTERVAL_MS = 15000;
     const STALE_THRESHOLD_SECONDS = 30;
     const MAX_HISTORY_POINTS = 50;
 
@@ -427,6 +455,7 @@
 
       try {
         const assets = await firebaseGet("assets");
+        const previousSelected = selectedAssetId || assetSelect.value;
 
         assetSelect.innerHTML = "";
 
@@ -435,7 +464,7 @@
           return;
         }
 
-        const assetIds = Object.keys(assets);
+        const assetIds = Object.keys(assets).sort();
 
         if (assetIds.length === 0) {
           assetSelect.innerHTML = `<option value="">No assets found</option>`;
@@ -449,13 +478,22 @@
           assetSelect.appendChild(option);
         });
 
-        selectedAssetId = selectedAssetId || assetIds[0];
+        if (previousSelected && assetIds.includes(previousSelected)) {
+          selectedAssetId = previousSelected;
+        } else {
+          selectedAssetId = assetIds[0];
+        }
+
         assetSelect.value = selectedAssetId;
 
-        assetSelect.addEventListener("change", () => {
-          selectedAssetId = assetSelect.value;
-          refreshDashboard();
-        });
+        if (!assetSelect.dataset.listenerAttached) {
+          assetSelect.addEventListener("change", () => {
+            selectedAssetId = assetSelect.value;
+            refreshDashboard();
+          });
+
+          assetSelect.dataset.listenerAttached = "true";
+        }
 
         await refreshDashboard();
       } catch (error) {
@@ -486,6 +524,7 @@
         updateLiveMarker(latest);
         updateHistoryTrail(history);
         updateGeofenceStatus(latest);
+        updateTransmissionHealth(history, latest);
       } catch (error) {
         console.error(error);
         setAssetStatus("Dashboard refresh error", "status-nofix");
@@ -545,6 +584,13 @@
     function getFix(data) {
       const value = data.fix ?? data.gps_fix ?? data.gpsFix;
       return parseInt(value);
+    }
+
+
+    function getPacketCount(data) {
+      const value = data.packet_count ?? data.packetCount ?? data.packet ?? null;
+      const parsed = parseInt(value);
+      return Number.isFinite(parsed) ? parsed : null;
     }
 
     function isValidCoordinate(lat, lng) {
@@ -645,6 +691,7 @@
       const deviceId = getDeviceId(data);
       const timestampUtc = getTimestampUtc(data);
       const rssi = data.rssi ?? "N/A";
+      const packetCount = getPacketCount(data);
 
       const popupHtml = `
         <strong>${deviceId}</strong><br>
@@ -652,7 +699,8 @@
         Lat: ${lat.toFixed(6)}<br>
         Lng: ${lng.toFixed(6)}<br>
         UTC: ${timestampUtc}<br>
-        RSSI: ${rssi}
+        RSSI: ${rssi}<br>
+        Packet: ${packetCount ?? "N/A"}
       `;
 
       if (!assetMarker) {
@@ -763,6 +811,69 @@
       box.className = `status-box ${className}`;
     }
 
+
+    // ============================================================
+    // Transmission Health / Data Gap Detection
+    // ============================================================
+    function updateTransmissionHealth(history, latest) {
+      const latestPacket = getPacketCount(latest);
+
+      document.getElementById("latestPacketCount").textContent =
+        latestPacket !== null ? latestPacket : "N/A";
+
+      if (!history) {
+        document.getElementById("recordsChecked").textContent = "0";
+        document.getElementById("missingPackets").textContent = "0";
+        setTransmissionStatus("No history data", "status-stale");
+        return;
+      }
+
+      const records = Object.values(history)
+        .map((record) => {
+          return {
+            packetCount: getPacketCount(record),
+            receivedAt: getReceivedAt(record)
+          };
+        })
+        .filter((record) => record.packetCount !== null);
+
+      records.sort((a, b) => a.packetCount - b.packetCount);
+
+      document.getElementById("recordsChecked").textContent = records.length;
+
+      if (records.length < 2) {
+        document.getElementById("missingPackets").textContent = "0";
+        setTransmissionStatus("Not enough packet data", "status-stale");
+        return;
+      }
+
+      let missingPackets = 0;
+
+      for (let i = 1; i < records.length; i++) {
+        const previous = records[i - 1].packetCount;
+        const current = records[i].packetCount;
+        const gap = current - previous;
+
+        if (gap > 1) {
+          missingPackets += gap - 1;
+        }
+      }
+
+      document.getElementById("missingPackets").textContent = missingPackets;
+
+      if (missingPackets === 0) {
+        setTransmissionStatus("Good - No Gaps Detected", "status-live");
+      } else {
+        setTransmissionStatus("Gaps Detected", "status-warning");
+      }
+    }
+
+    function setTransmissionStatus(text, className) {
+      const box = document.getElementById("transmissionStatusBox");
+      box.textContent = text;
+      box.className = `status-box ${className}`;
+    }
+
     function calculateDistanceMeters(lat1, lng1, lat2, lng2) {
       const earthRadius = 6371000;
 
@@ -793,6 +904,10 @@
       refreshTimer = setInterval(() => {
         refreshDashboard();
       }, REFRESH_INTERVAL_MS);
+
+      setInterval(() => {
+        loadAssets();
+      }, ASSET_LIST_REFRESH_INTERVAL_MS);
     });
   </script>
 </body>
