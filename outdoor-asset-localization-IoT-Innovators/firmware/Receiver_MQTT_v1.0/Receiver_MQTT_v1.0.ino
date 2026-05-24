@@ -9,8 +9,8 @@
 // WiFi Configuration
 // =======================================================
 // Change these before uploading
-const char* WIFI_SSID = "Infinix SMART 10";
-const char* WIFI_PASSWORD = "youset123";
+const char* WIFI_SSID = "Adam2";
+const char* WIFI_PASSWORD = "Adam2003";
 
 // =======================================================
 // MQTT Configuration
@@ -135,8 +135,17 @@ void setupLoRa() {
 
 // =======================================================
 // Function: Split CSV Payload
-// Expected payload:
-// deviceID,fix,latitude,longitude,timestamp_utc,satellites,hdop,uptime
+// Expected payload formats:
+//
+/*
+  Old Week 3 payload:
+  deviceID,fix,latitude,longitude,timestamp_utc,satellites,hdop,uptime
+
+  New Week 4 payload:
+  deviceID,fix,latitude,longitude,timestamp_utc,satellites,hdop,uptime,battery_voltage
+
+  The receiver supports both formats to remain backward compatible.
+*/
 // =======================================================
 bool splitPayload(
   const String& payload,
@@ -147,17 +156,24 @@ bool splitPayload(
   String& timestampUTC,
   String& satellites,
   String& hdop,
-  String& uptime
+  String& uptime,
+  String& batteryVoltage
 ) {
-  int commaPositions[7];
+  int commaPositions[8];
 
   commaPositions[0] = payload.indexOf(',');
   if (commaPositions[0] == -1) return false;
 
+  // Required commas for the old 8-field payload:
+  // 7 commas are required for:
+  // deviceID,fix,latitude,longitude,timestamp_utc,satellites,hdop,uptime
   for (int i = 1; i < 7; i++) {
     commaPositions[i] = payload.indexOf(',', commaPositions[i - 1] + 1);
     if (commaPositions[i] == -1) return false;
   }
+
+  // Optional 8th comma for Week 4 battery_voltage field
+  commaPositions[7] = payload.indexOf(',', commaPositions[6] + 1);
 
   deviceID     = payload.substring(0, commaPositions[0]);
   fix          = payload.substring(commaPositions[0] + 1, commaPositions[1]);
@@ -166,7 +182,16 @@ bool splitPayload(
   timestampUTC = payload.substring(commaPositions[3] + 1, commaPositions[4]);
   satellites   = payload.substring(commaPositions[4] + 1, commaPositions[5]);
   hdop         = payload.substring(commaPositions[5] + 1, commaPositions[6]);
-  uptime       = payload.substring(commaPositions[6] + 1);
+
+  if (commaPositions[7] == -1) {
+    // Old payload format without battery voltage
+    uptime = payload.substring(commaPositions[6] + 1);
+    batteryVoltage = "NA";
+  } else {
+    // New payload format with battery voltage
+    uptime = payload.substring(commaPositions[6] + 1, commaPositions[7]);
+    batteryVoltage = payload.substring(commaPositions[7] + 1);
+  }
 
   deviceID.trim();
   fix.trim();
@@ -176,8 +201,12 @@ bool splitPayload(
   satellites.trim();
   hdop.trim();
   uptime.trim();
+  batteryVoltage.trim();
 
   if (deviceID.length() == 0) return false;
+  if (fix.length() == 0) return false;
+  if (latitude.length() == 0) return false;
+  if (longitude.length() == 0) return false;
 
   return true;
 }
@@ -194,10 +223,11 @@ bool publishLocationToMQTT(
   String satellites,
   String hdop,
   String uptime,
+  String batteryVoltage,
   int rssi,
   String rawPayload
 ) {
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<768> doc;
 
   doc["deviceID"] = deviceID;
   doc["fix"] = fix.toInt();
@@ -207,12 +237,23 @@ bool publishLocationToMQTT(
   doc["satellites"] = satellites.toInt();
   doc["hdop"] = hdop.toFloat();
   doc["uptime"] = uptime.toInt();
+
+  // Week 4 battery monitoring field.
+  // If the sender is still using the old payload format, this will be stored as null.
+  if (batteryVoltage != "NA" && batteryVoltage.length() > 0) {
+    doc["battery_voltage"] = batteryVoltage.toFloat();
+    doc["batteryVoltage"] = batteryVoltage.toFloat();
+  } else {
+    doc["battery_voltage"] = nullptr;
+    doc["batteryVoltage"] = nullptr;
+  }
+
   doc["rssi"] = rssi;
   doc["gateway"] = "receiver01";
   doc["packet_count"] = packetCount;
   doc["raw_payload"] = rawPayload;
 
-  char jsonBuffer[512];
+  char jsonBuffer[768];
   size_t jsonSize = serializeJson(doc, jsonBuffer);
 
   if (jsonSize == 0) {
@@ -256,12 +297,13 @@ void setup() {
   Serial.println("Device: receiver01");
   Serial.println("Mode: LoRa to WiFi/MQTT Gateway");
   Serial.println("OLED: Disabled to reduce power usage");
+  Serial.println("Week 4: Supports optional battery_voltage field");
   Serial.println("====================================");
 
   connectWiFi();
 
   mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
-  mqttClient.setBufferSize(512);
+  mqttClient.setBufferSize(768);
 
   reconnectMQTT();
 
@@ -318,6 +360,7 @@ void loop() {
     String satellites;
     String hdop;
     String uptime;
+    String batteryVoltage;
 
     bool parsed = splitPayload(
       incomingPayload,
@@ -328,7 +371,8 @@ void loop() {
       timestampUTC,
       satellites,
       hdop,
-      uptime
+      uptime,
+      batteryVoltage
     );
 
     if (!parsed) {
@@ -355,6 +399,8 @@ void loop() {
     Serial.println(hdop);
     Serial.print("Uptime: ");
     Serial.println(uptime);
+    Serial.print("Battery Voltage: ");
+    Serial.println(batteryVoltage);
 
     publishLocationToMQTT(
       deviceID,
@@ -365,6 +411,7 @@ void loop() {
       satellites,
       hdop,
       uptime,
+      batteryVoltage,
       rssi,
       incomingPayload
     );

@@ -200,7 +200,7 @@
 <body>
   <header>
     <h1>Outdoor Asset Localization - Dashboard V2</h1>
-    <p>Live asset tracking with history trail and geofence warning</p>
+    <p>Live asset tracking with history trail, geofence warning, transmission health, and battery monitoring</p>
   </header>
 
   <main class="dashboard">
@@ -268,6 +268,16 @@
         </div>
 
         <div class="data-row">
+          <span>Battery Voltage</span>
+          <span id="batteryVoltage">N/A</span>
+        </div>
+
+        <div class="data-row">
+          <span>Battery Status</span>
+          <span id="batteryStatus">N/A</span>
+        </div>
+
+        <div class="data-row">
           <span>Gateway</span>
           <span id="gateway">N/A</span>
         </div>
@@ -281,6 +291,10 @@
           <span>Received At</span>
           <span id="receivedAt">N/A</span>
         </div>
+
+        <p class="small-note">
+          Battery voltage is optional and appears when the Week 4 sender firmware includes it in the LoRa payload.
+        </p>
       </div>
 
       <div class="section">
@@ -593,6 +607,53 @@
       return Number.isFinite(parsed) ? parsed : null;
     }
 
+
+    function getBatteryVoltage(data) {
+      const value =
+        data.battery_voltage ??
+        data.batteryVoltage ??
+        data.battery ??
+        data.vbat ??
+        data.vBat ??
+        null;
+
+      const parsed = parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function getBatteryStatus(data) {
+      const explicitStatus =
+        data.battery_status ??
+        data.batteryStatus ??
+        data.battery_state ??
+        data.batteryState ??
+        null;
+
+      if (explicitStatus && String(explicitStatus).trim() !== "") {
+        return String(explicitStatus);
+      }
+
+      const voltage = getBatteryVoltage(data);
+
+      if (voltage === null) {
+        return "N/A";
+      }
+
+      if (voltage >= 4.00) {
+        return "GOOD";
+      }
+
+      if (voltage >= 3.70) {
+        return "NORMAL";
+      }
+
+      if (voltage >= 3.40) {
+        return "LOW";
+      }
+
+      return "CRITICAL";
+    }
+
     function isValidCoordinate(lat, lng) {
       return (
         Number.isFinite(lat) &&
@@ -614,6 +675,8 @@
       const fix = getFix(data);
       const timestampUtc = getTimestampUtc(data);
       const receivedAt = getReceivedAt(data);
+      const batteryVoltage = getBatteryVoltage(data);
+      const batteryStatus = getBatteryStatus(data);
 
       document.getElementById("deviceId").textContent = deviceId;
       document.getElementById("gpsFix").textContent =
@@ -635,6 +698,22 @@
 
       document.getElementById("rssi").textContent =
         data.rssi ?? data.signal_rssi ?? data.signalRssi ?? "N/A";
+
+      document.getElementById("batteryVoltage").textContent =
+        batteryVoltage !== null ? `${batteryVoltage.toFixed(2)} V` : "N/A";
+
+      document.getElementById("batteryStatus").textContent = batteryStatus;
+
+      const batteryStatusElement = document.getElementById("batteryStatus");
+      batteryStatusElement.className = "";
+
+      if (batteryStatus === "GOOD" || batteryStatus === "NORMAL") {
+        batteryStatusElement.classList.add("success-text");
+      } else if (batteryStatus === "LOW" || batteryStatus === "CRITICAL") {
+        batteryStatusElement.classList.add("warning-text");
+      } else {
+        batteryStatusElement.classList.add("info-text");
+      }
 
       document.getElementById("gateway").textContent =
         data.gateway ?? "N/A";
@@ -692,6 +771,8 @@
       const timestampUtc = getTimestampUtc(data);
       const rssi = data.rssi ?? "N/A";
       const packetCount = getPacketCount(data);
+      const batteryVoltage = getBatteryVoltage(data);
+      const batteryStatus = getBatteryStatus(data);
 
       const popupHtml = `
         <strong>${deviceId}</strong><br>
@@ -700,7 +781,8 @@
         Lng: ${lng.toFixed(6)}<br>
         UTC: ${timestampUtc}<br>
         RSSI: ${rssi}<br>
-        Packet: ${packetCount ?? "N/A"}
+        Packet: ${packetCount ?? "N/A"}<br>
+        Battery: ${batteryVoltage !== null ? batteryVoltage.toFixed(2) + " V" : "N/A"} (${batteryStatus})
       `;
 
       if (!assetMarker) {
