@@ -108,7 +108,7 @@ A single-page browser interface that connects to HiveMQ over MQTT WebSocket. Fea
 
 ### Mobile App
 
-A lightweight mobile application for iOS and Android that gives administrators the ability to send announcements from a phone without needing access to the web dashboard.
+A lightweight mobile application for Android that gives administrators the ability to send announcements from a phone without needing access to the web dashboard.
 
 **What it does:**
 
