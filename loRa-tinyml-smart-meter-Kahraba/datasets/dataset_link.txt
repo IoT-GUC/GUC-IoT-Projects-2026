@@ -1,0 +1,4 @@
+https://www.kaggle.com/datasets/kareemriad025/merged-digit-dataset
+https://www.kaggle.com/datasets/kareemriad025/lcd-crops
+https://www.kaggle.com/datasets/kareemriad025/sd-pulls
+https://drive.google.com/drive/folders/1A_5bpZylON965H7ABSW5TO4ZVwqug04L?usp=sharing
