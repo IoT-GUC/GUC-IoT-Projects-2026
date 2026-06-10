@@ -316,24 +316,23 @@ It receives LoRa packets from the sender and forwards them to MQTT.
 
 ## Repository Structure
 
+The repository ZIP currently contains the following confirmed structure:
+
 ```text
 outdoor-asset-localization-IoT-Innovators/
 │
 ├── README.md
+├── .gitignore
 │
 ├── firmware/
 │   ├── Sender_v1.0/
 │   │   └── Sender_v1.0.ino
-│   │
 │   ├── Sender_NoOLED_v1.0/
 │   │   └── Sender_NoOLED_v1.0.ino
-│   │
-│   ├── Sender_MultiAsset_PowerTuned_Battery_v1.0/
-│   │   └── Sender_MultiAsset_PowerTuned_Battery_v1.0.ino
-│   │
+│   ├── Sender_MultiAsset_PowerTuned_v1.0/
+│   │   └── Sender_MultiAsset_PowerTuned_v1.0.ino
 │   ├── Receiver_v1.0/
 │   │   └── Receiver_v1.0.ino
-│   │
 │   └── Receiver_MQTT_v1.0/
 │       └── Receiver_MQTT_v1.0.ino
 │
@@ -349,8 +348,16 @@ outdoor-asset-localization-IoT-Innovators/
 │
 ├── docs/
 │   ├── week_1/
+│   │   ├── backend-schema.md
+│   │   ├── payload-format.md
+│   │   ├── week-1-test-log.md
+│   │   └── wiring-reference.md
 │   ├── week_2/
+│   │   └── week2-test-log.md
 │   ├── week_3/
+│   │   ├── dashboard-v2-features.md
+│   │   ├── mqtt-integration.md
+│   │   └── week3-test-log.md
 │   └── week_4/
 │       ├── power-measurement.md
 │       ├── final-integration-test-log.md
@@ -361,18 +368,28 @@ outdoor-asset-localization-IoT-Innovators/
 │   ├── week_2/
 │   ├── week_3/
 │   └── week_4/
+│       ├── final-dashboard-live-battery.png
+│       └── gaps_detected.png
+│
+├── diagrams/
+│   ├── Final_system_architecture.png
+│   ├── week1_system-architecture.png
+│   └── week3_system-architecture.png
 │
 ├── presentation/
-│   └── IoT_Innovators_Presentation.pdf
+│   ├── IoT_Innovators_Final_Presentation.pptx
+│   └── IoT_Innovators_week1_presentation.pptx
 │
-├── references/
-│   └── references.md
-│
-└── diagrams/
-    ├── system-architecture.png
-    ├── system-architecture-week3.png
-    └── system-architecture-week4.png
+└── references/
+    └── references.md
 ```
+
+### Important Repository Audit Notes
+
+- The final Week 4 sender folder in the uploaded ZIP is named `Sender_MultiAsset_PowerTuned_v1.0`, not `Sender_MultiAsset_PowerTuned_Battery_v1.0`.
+- The final Week 4 sender still includes battery voltage monitoring; the word `Battery` simply is not part of the actual folder/file name.
+- The Google Maps dashboard currently uses `ENTERHERE` as the API-key placeholder. Replace that value locally with a real Google Maps JavaScript API key when testing.
+- The included Week 4 evidence files in the ZIP are `final-dashboard-live-battery.png` and `gaps_detected.png`. Additional screenshots/video can still be added if required by submission rules.
 
 ---
 
@@ -411,7 +428,7 @@ The sender still prints debug information through Serial Monitor when USB is con
 ## Sender Multi-Asset Power-Tuned Battery v1.0
 
 ```text
-firmware/Sender_MultiAsset_PowerTuned_Battery_v1.0/Sender_MultiAsset_PowerTuned_Battery_v1.0.ino
+firmware/Sender_MultiAsset_PowerTuned_v1.0/Sender_MultiAsset_PowerTuned_v1.0.ino
 ```
 
 This is the final Week 4 sender firmware.
@@ -824,7 +841,7 @@ It reads the same Firebase latest/history records as Dashboard V2 and implements
 The Google Maps dashboard contains a placeholder:
 
 ```js
-const GOOGLE_MAPS_API_KEY = "PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE";
+const GOOGLE_MAPS_API_KEY = "ENTERHERE";
 ```
 
 The real API key should be pasted locally during testing.
@@ -1005,7 +1022,7 @@ OLED libraries are not required for the No-OLED sender or MQTT receiver.
 Open:
 
 ```text
-firmware/Sender_MultiAsset_PowerTuned_Battery_v1.0/Sender_MultiAsset_PowerTuned_Battery_v1.0.ino
+firmware/Sender_MultiAsset_PowerTuned_v1.0/Sender_MultiAsset_PowerTuned_v1.0.ino
 ```
 
 Check:
@@ -1189,7 +1206,7 @@ dashboard/dashboard_google_maps.html
 Full final flow:
 
 ```text
-Sender_MultiAsset_PowerTuned_Battery
+Sender_MultiAsset_PowerTuned
         ↓
 LoRa
         ↓
@@ -1349,12 +1366,17 @@ Evidence folder:
 evidence/week_4/
 ```
 
-Recommended evidence files:
+Included Week 4 evidence files in the current ZIP:
 
 ```text
 final-dashboard-live-battery.png
+gaps_detected.png
+```
+
+Additional recommended evidence that can be added before final submission:
+
+```text
 final-dashboard-history-trail.png
-final-dashboard-transmission-health.png
 final-firebase-latest-battery.png
 final-mqtt-to-firebase-terminal.png
 final-receiver-serial-monitor.png
@@ -1393,14 +1415,14 @@ backup-demo-video-link.md
 | Complete final report | Completed through README.md |
 | Complete architecture visuals | Included in diagrams folder |
 | Complete repository README | Completed |
-| Prepare final presentation slides | To be finalized |
+| Prepare final presentation slides | Completed: `presentation/IoT_Innovators_Final_Presentation.pptx` exists in the ZIP |
 | Rehearse live demo sequence | Demo roles documented |
-| Record backup demo video | To be recorded |
+| Record backup demo video | Not found in the uploaded ZIP; record or add a backup video link if required |
 | Optional enhancements | Battery monitoring and transmission tuning added |
 | Implement one additional feature | Completed: Transmission Health Monitor |
 | Measure power consumption | Addressed through battery voltage monitoring and power behavior documentation |
 | Final integrated system working end-to-end | Completed |
-| Repository cleaned and documented | Completed / final commit required |
+| Repository cleaned and documented | Completed in the uploaded ZIP; final commit/push still depends on repository hosting workflow |
 
 ---
 
