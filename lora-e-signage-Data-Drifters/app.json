@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "GUC E-Sign Mobile Admin",
+    "slug": "guc-e-sign-mobile-admin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#f6f7f9"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.guc.esignmobileadmin",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.guc.esignmobileadmin",
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "mqttBroker": "wss://broker.hivemq.com:8884/mqtt",
+      "mqttTopic": "guc/datasignage/display",
+      "eas": {
+        "projectId": "86dd40a6-ee84-4c75-8e0b-eb97c5ede88a"
+      }
+    }
+  }
+}

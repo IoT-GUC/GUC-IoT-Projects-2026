@@ -47,6 +47,52 @@ def safe_device_id(device_id: str) -> str:
     return quote(str(device_id), safe="")
 
 
+
+def parse_optional_float(value, default=None):
+    """
+    Safely parse optional numeric fields such as battery voltage.
+    Returns default if the value is missing, empty, NA, null, or invalid.
+    """
+    if value is None:
+        return default
+
+    if isinstance(value, str):
+        clean_value = value.strip()
+        if clean_value == "" or clean_value.upper() in {"NA", "N/A", "NULL", "NONE"}:
+            return default
+        value = clean_value
+
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def battery_status_from_voltage(battery_voltage) -> str:
+    """
+    Simple LiPo battery status estimate based on voltage.
+
+    Typical 1-cell LiPo values:
+    - Around 4.2V = full
+    - Around 3.7V = nominal
+    - Below 3.4V = low/critical area
+    """
+    if battery_voltage is None:
+        return "UNKNOWN"
+
+    if battery_voltage >= 4.00:
+        return "GOOD"
+
+    if battery_voltage >= 3.70:
+        return "NORMAL"
+
+    if battery_voltage >= 3.40:
+        return "LOW"
+
+    return "CRITICAL"
+
+
+
 def validate_location_record(record: dict) -> tuple[bool, str]:
     required_fields = [
         "deviceID",
@@ -105,6 +151,15 @@ def normalize_record(record: dict) -> dict:
     uptime = int(record["uptime"])
     rssi = int(record["rssi"])
 
+    # Week 4 optional battery monitoring field.
+    # Receiver supports both old 8-field payloads and new 9-field payloads.
+    # Old messages may not include battery_voltage, so this remains optional.
+    battery_voltage = parse_optional_float(
+        record.get("battery_voltage", record.get("batteryVoltage")),
+        default=None,
+    )
+    battery_status = battery_status_from_voltage(battery_voltage)
+
     normalized = {
         # =======================================================
         # Main MQTT/Firebase fields
@@ -123,6 +178,14 @@ def normalize_record(record: dict) -> dict:
         "raw_payload": str(record.get("raw_payload", "")),
         "updated_at": now,
         "source": "mqtt",
+
+        # =======================================================
+        # Week 4 battery monitoring fields
+        # =======================================================
+        "battery_voltage": battery_voltage,
+        "batteryVoltage": battery_voltage,
+        "battery_status": battery_status,
+        "batteryStatus": battery_status,
 
         # =======================================================
         # Device ID aliases
@@ -289,6 +352,7 @@ def main():
     print("===========================================")
     print("IoT Innovators MQTT to Firebase Bridge")
     print("Mode: MQTT Broker -> Firebase Realtime DB")
+    print("Week 4: Supports optional battery_voltage field")
     print("===========================================")
     print(f"MQTT broker: {MQTT_BROKER}:{MQTT_PORT}")
     print(f"MQTT topic: {MQTT_TOPIC_ALL}")

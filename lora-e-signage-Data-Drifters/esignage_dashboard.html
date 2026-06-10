@@ -1,0 +1,213 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  .dash { font-family: 'DM Sans', sans-serif; padding: 1.5rem; max-width: 680px; }
+  
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .logo { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: var(--color-text-primary); letter-spacing: 0.05em; }
+  .logo span { color: var(--color-text-secondary); font-weight: 400; }
+  
+  .status-row { display: flex; gap: 8px; align-items: center; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #639922; }
+  .dot.off { background: #E24B4A; }
+  .status-label { font-size: 12px; color: var(--color-text-secondary); font-family: 'Space Mono', monospace; }
+  
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.875rem 1rem; }
+  .card-label { font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-family: 'Space Mono', monospace; }
+  .card-value { font-size: 22px; font-weight: 500; color: var(--color-text-primary); font-family: 'Space Mono', monospace; }
+  .card-sub { font-size: 11px; color: var(--color-text-secondary); margin-top: 3px; }
+
+  .panel { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+  .panel-title { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem; font-family: 'Space Mono', monospace; }
+  
+  textarea { width: 100%; min-height: 90px; resize: vertical; font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 0.75rem; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-secondary); color: var(--color-text-primary); line-height: 1.5; }
+  textarea:focus { outline: none; border-color: var(--color-border-primary); }
+  
+  .char-count { font-size: 11px; color: var(--color-text-secondary); font-family: 'Space Mono', monospace; text-align: right; margin-top: 6px; }
+  .char-count.warn { color: #BA7517; }
+  
+  .btn-row { display: flex; gap: 8px; margin-top: 1rem; }
+  
+  .btn { padding: 0.6rem 1.25rem; border-radius: var(--border-radius-md); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-primary); transition: background 0.15s; }
+  .btn:hover { background: var(--color-background-secondary); }
+  .btn:active { transform: scale(0.98); }
+  
+  .btn-send { background: var(--color-text-primary); color: var(--color-background-primary); border-color: var(--color-text-primary); flex: 1; }
+  .btn-send:hover { opacity: 0.85; background: var(--color-text-primary); }
+  .btn-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  
+  .btn-alert { border-color: #A32D2D; color: #A32D2D; }
+  .btn-alert:hover { background: #FCEBEB; }
+  
+  .btn-clear { color: var(--color-text-secondary); }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+  .preset { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-secondary); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .preset:hover { background: var(--color-background-secondary); color: var(--color-text-primary); border-color: var(--color-border-primary); }
+
+  .log { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .log-item { display: flex; align-items: flex-start; gap: 10px; font-size: 12px; padding: 8px 10px; border-radius: var(--border-radius-md); background: var(--color-background-secondary); }
+  .log-time { font-family: 'Space Mono', monospace; color: var(--color-text-secondary); white-space: nowrap; flex-shrink: 0; }
+  .log-msg { color: var(--color-text-primary); line-height: 1.4; }
+  .log-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-family: 'Space Mono', monospace; flex-shrink: 0; margin-left: auto; }
+  .badge-sent { background: #EAF3DE; color: #3B6D11; }
+  .badge-alert { background: #FCEBEB; color: #A32D2D; }
+  .badge-info { background: var(--color-background-secondary); color: var(--color-text-secondary); border: 0.5px solid var(--color-border-tertiary); }
+
+  .empty-log { font-size: 12px; color: var(--color-text-secondary); font-family: 'Space Mono', monospace; text-align: center; padding: 1.5rem 0; }
+
+  .topic-tag { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: 4px; padding: 2px 6px; }
+</style>
+
+<div class="dash">
+  <h2 class="sr-only">E-Signage dashboard for sending messages over LoRa via MQTT</h2>
+
+  <div class="topbar">
+    <div class="logo">GUC E-SIGN <span>/ admin panel</span></div>
+    <div class="status-row">
+      <div class="dot off" id="mqtt-dot"></div>
+      <span class="status-label" id="mqtt-status">disconnected</span>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Messages sent</div>
+      <div class="card-value" id="count">0</div>
+      <div class="card-sub">this session</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Last sent</div>
+      <div class="card-value" id="last-time">—</div>
+      <div class="card-sub">hh:mm:ss</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Broker</div>
+      <div class="card-value" style="font-size:13px; padding-top:4px;">HiveMQ</div>
+      <div class="card-sub">broker.hivemq.com</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Compose message &nbsp;<span class="topic-tag">guc/datasignage/display</span></div>
+    
+    <div class="presets">
+      <button class="preset" onclick="setPreset(this)">Class cancelled</button>
+      <button class="preset" onclick="setPreset(this)">Room changed to H7</button>
+      <button class="preset" onclick="setPreset(this)">Meeting at 2PM</button>
+      <button class="preset" onclick="setPreset(this)">Office hours open</button>
+      <button class="preset" onclick="setPreset(this)">Lab closed today</button>
+    </div>
+
+    <textarea id="msg" placeholder="Type your sign message here..." maxlength="200" oninput="updateChar()"></textarea>
+    <div class="char-count" id="char-count">0 / 200</div>
+
+    <div class="btn-row">
+      <button class="btn btn-alert" onclick="sendAlert()">! Emergency alert</button>
+      <button class="btn btn-clear" onclick="clearMsg()">Clear</button>
+      <button class="btn btn-send" id="send-btn" onclick="sendMsg()" disabled>Send to display</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Activity log</div>
+    <div class="log" id="log">
+      <div class="empty-log" id="empty-log">No messages sent yet</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+<script>
+  const BROKER = 'wss://broker.hivemq.com:8884/mqtt';
+  const TOPIC  = 'guc/datasignage/display';
+  
+  let client = null;
+  let msgCount = 0;
+
+  function connect() {
+    const clientId = 'guc-dashboard-' + Math.random().toString(16).slice(2, 8);
+    client = mqtt.connect(BROKER, { clientId, clean: true, reconnectPeriod: 3000 });
+
+    client.on('connect', () => {
+      document.getElementById('mqtt-dot').classList.remove('off');
+      document.getElementById('mqtt-status').textContent = 'connected';
+      addLog('Connected to HiveMQ broker', 'info');
+    });
+
+    client.on('error', () => {
+      document.getElementById('mqtt-dot').classList.add('off');
+      document.getElementById('mqtt-status').textContent = 'error';
+    });
+
+    client.on('offline', () => {
+      document.getElementById('mqtt-dot').classList.add('off');
+      document.getElementById('mqtt-status').textContent = 'reconnecting...';
+    });
+  }
+
+  function sendMsg() {
+    const msg = document.getElementById('msg').value.trim();
+    if (!msg || !client || !client.connected) return;
+    client.publish(TOPIC, msg, { qos: 0 }, () => {
+      msgCount++;
+      document.getElementById('count').textContent = msgCount;
+      const now = new Date();
+      document.getElementById('last-time').textContent = now.toTimeString().slice(0,8);
+      addLog(msg, 'sent');
+      document.getElementById('msg').value = '';
+      updateChar();
+    });
+  }
+
+  function sendAlert() {
+    const msg = 'EMERGENCY: Please evacuate the building immediately.';
+    if (!client || !client.connected) return;
+    client.publish(TOPIC, msg, { qos: 0 }, () => {
+      msgCount++;
+      document.getElementById('count').textContent = msgCount;
+      const now = new Date();
+      document.getElementById('last-time').textContent = now.toTimeString().slice(0,8);
+      addLog(msg, 'alert');
+    });
+  }
+
+  function clearMsg() {
+    document.getElementById('msg').value = '';
+    updateChar();
+  }
+
+  function setPreset(el) {
+    document.getElementById('msg').value = el.textContent.trim();
+    updateChar();
+  }
+
+  function updateChar() {
+    const val = document.getElementById('msg').value;
+    const cc = document.getElementById('char-count');
+    cc.textContent = val.length + ' / 200';
+    cc.className = 'char-count' + (val.length > 160 ? ' warn' : '');
+    document.getElementById('send-btn').disabled = val.trim().length === 0;
+  }
+
+  function addLog(msg, type) {
+    const log = document.getElementById('log');
+    const empty = document.getElementById('empty-log');
+    if (empty) empty.remove();
+
+    const now = new Date().toTimeString().slice(0,8);
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    const badge = type === 'sent' ? '<span class="log-badge badge-sent">sent</span>'
+                : type === 'alert' ? '<span class="log-badge badge-alert">alert</span>'
+                : '<span class="log-badge badge-info">info</span>';
+    item.innerHTML = `<span class="log-time">${now}</span><span class="log-msg">${msg}</span>${badge}`;
+    log.insertBefore(item, log.firstChild);
+  }
+
+  connect();
+</script>
