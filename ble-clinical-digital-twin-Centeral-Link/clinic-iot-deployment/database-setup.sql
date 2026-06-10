@@ -234,100 +234,100 @@ END;
 --
 --
 -- Using Materealized Views
-CREATE TABLE records (
-    id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    router_id RAW (16),
-    patient_id RAW (16),
-    device_id RAW (16),
-    timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
-    rssi NUMBER NOT NULL
-)
-PARTITION BY
-    RANGE (timestamp) INTERVAL(NUMTODSINTERVAL (1, 'DAY')) (
-        PARTITION p0
-        VALUES
-            LESS THAN (TIMESTAMP '2026-01-01 00:00:00')
-    );
+-- CREATE TABLE records (
+--     id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+--     router_id RAW (16),
+--     patient_id RAW (16),
+--     device_id RAW (16),
+--     timestamp TIMESTAMP DEFAULT SYSTIMESTAMP,
+--     rssi NUMBER NOT NULL
+-- )
+-- PARTITION BY
+--     RANGE (timestamp) INTERVAL(NUMTODSINTERVAL (1, 'DAY')) (
+--         PARTITION p0
+--         VALUES
+--             LESS THAN (TIMESTAMP '2026-01-01 00:00:00')
+--     );
 
-CREATE INDEX idx_records_router_time ON records (router_id, timestamp);
+-- CREATE INDEX idx_records_router_time ON records (router_id, timestamp);
 
-CREATE INDEX idx_records_patient_time ON records (patient_id, timestamp);
+-- CREATE INDEX idx_records_patient_time ON records (patient_id, timestamp);
 
-CREATE INDEX idx_records_device_time ON records (device_id, timestamp);
+-- CREATE INDEX idx_records_device_time ON records (device_id, timestamp);
 
-CREATE MATERIALIZED VIEW latest_records_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
-SELECT
-    device_id,
-    router_id,
-    timestamp
-FROM
-    (
-        SELECT
-            device_id,
-            router_id,
-            timestamp,
-            ROW_NUMBER() OVER (
-                PARTITION BY
-                    device_id
-                ORDER BY
-                    timestamp DESC
-            ) rn
-        FROM
-            records
-    )
-WHERE
-    rn = 1;
+-- CREATE MATERIALIZED VIEW latest_records_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
+-- SELECT
+--     device_id,
+--     router_id,
+--     timestamp
+-- FROM
+--     (
+--         SELECT
+--             device_id,
+--             router_id,
+--             timestamp,
+--             ROW_NUMBER() OVER (
+--                 PARTITION BY
+--                     device_id
+--                 ORDER BY
+--                     timestamp DESC
+--             ) rn
+--         FROM
+--             records
+--     )
+-- WHERE
+--     rn = 1;
 
-CREATE MATERIALIZED VIEW routers_map_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
-SELECT
-    r.id,
-    r.hospital_id,
-    r.location_x,
-    r.location_y,
-    COUNT(l.device_id) AS connected_devices_count
-FROM
-    routers r
-    LEFT JOIN latest_records_mv l ON r.id = l.router_id
-GROUP BY
-    r.id,
-    r.hospital_id,
-    r.location_x,
-    r.location_y;
+-- CREATE MATERIALIZED VIEW routers_map_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
+-- SELECT
+--     r.id,
+--     r.hospital_id,
+--     r.location_x,
+--     r.location_y,
+--     COUNT(l.device_id) AS connected_devices_count
+-- FROM
+--     routers r
+--     LEFT JOIN latest_records_mv l ON r.id = l.router_id
+-- GROUP BY
+--     r.id,
+--     r.hospital_id,
+--     r.location_x,
+--     r.location_y;
 
-CREATE MATERIALIZED VIEW hourly_records_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
-SELECT
-    routers.hospital_id,
-    TRUNC (records.timestamp, 'HH') AS hour,
-    COUNT(*) AS records_count
-FROM
-    records
-    JOIN routers ON records.router_id = routers.id
-GROUP BY
-    routers.hospital_id,
-    TRUNC (records.timestamp, 'HH');
+-- CREATE MATERIALIZED VIEW hourly_records_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
+-- SELECT
+--     routers.hospital_id,
+--     TRUNC (records.timestamp, 'HH') AS hour,
+--     COUNT(*) AS records_count
+-- FROM
+--     records
+--     JOIN routers ON records.router_id = routers.id
+-- GROUP BY
+--     routers.hospital_id,
+--     TRUNC (records.timestamp, 'HH');
 
-CREATE MATERIALIZED VIEW patient_router_sessions_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
-SELECT
-    patient_id,
-    router_id,
-    MIN(timestamp) AS start_time,
-    (
-        CAST(MAX(timestamp) AS DATE) - CAST(MIN(timestamp) AS DATE)
-    ) * 86400 AS duration_seconds
-FROM
-    records
-GROUP BY
-    patient_id,
-    router_id;
+-- CREATE MATERIALIZED VIEW patient_router_sessions_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
+-- SELECT
+--     patient_id,
+--     router_id,
+--     MIN(timestamp) AS start_time,
+--     (
+--         CAST(MAX(timestamp) AS DATE) - CAST(MIN(timestamp) AS DATE)
+--     ) * 86400 AS duration_seconds
+-- FROM
+--     records
+-- GROUP BY
+--     patient_id,
+--     router_id;
 
-CREATE MATERIALIZED VIEW router_hourly_sessions_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
-SELECT
-    router_id,
-    TRUNC (start_time, 'HH') AS hour,
-    COUNT(*) AS sessions_count,
-    AVG(duration_seconds) AS avg_session_duration
-FROM
-    patient_router_sessions_mv
-GROUP BY
-    router_id,
-    TRUNC (start_time, 'HH');
+-- CREATE MATERIALIZED VIEW router_hourly_sessions_mv BUILD IMMEDIATE REFRESH FAST ON COMMIT AS
+-- SELECT
+--     router_id,
+--     TRUNC (start_time, 'HH') AS hour,
+--     COUNT(*) AS sessions_count,
+--     AVG(duration_seconds) AS avg_session_duration
+-- FROM
+--     patient_router_sessions_mv
+-- GROUP BY
+--     router_id,
+--     TRUNC (start_time, 'HH');

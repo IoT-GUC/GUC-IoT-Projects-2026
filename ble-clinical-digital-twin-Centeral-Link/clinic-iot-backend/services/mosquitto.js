@@ -66,13 +66,13 @@ async function onMQTTMessage(topic, message) {
           const now = new Date();
           if (now - timestamp < DEVICES_SIGNAL_PERIOD * 1000) {
             // This is a duplicate signal
-            if (!router_id.equals(rows[0].ROUTER_ID) && rows[0].RSSI < rssi){
+            if (router_id !== rows[0].ROUTER_ID && rows[0].RSSI < rssi){
               // Assign the record to the the router with the highest RSSI
               await db.query(recordQueries.updateRecord, { router_id, rssi, record_id: rows[0].ID }, { autoCommit: true });
             }
           } else {
             // This is a new signal
-            if (rows.length >= 2 && router_id.equals(rows[0].ROUTER_ID) && router_id.equals(rows[1].ROUTER_ID)) {
+            if (rows.length >= 2 && router_id === (rows[0].ROUTER_ID) && router_id === (rows[1].ROUTER_ID)) {
               // The device has at least two consecutive records from the current router.
               await db.query(recordQueries.updateRecord, { router_id, rssi, record_id: rows[0].ID }, { autoCommit: true });
             } else {
