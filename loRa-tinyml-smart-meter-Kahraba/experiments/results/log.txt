@@ -1,0 +1,438 @@
+Camera ready
+FOMO model schema OK
+FOMO tensor arena allocated: 409600 bytes at 0x3f825cf0
+Calling FOMO AllocateTensors()...
+FOMO AllocateTensors status=0
+FOMO Input type=9 dims=1,96,96,1 scale=0.003921569 zero=-128 bytes=9216
+FOMO Output type=9 dims=1,12,12,2 scale=0.003906250 zero=-128 bytes=288
+FOMO model ready
+Model schema OK
+Tensor arena allocated: 2560000 bytes at 0x3f88bcf4
+Calling AllocateTensors()...
+AllocateTensors status=0
+Input type=9 dims=1,160,160,3 scale=0.003921569 zero=-128 bytes=76800
+Output type=9 dims=1,15,1600 scale=0.003893295 zero=-128 bytes=24000
+YOLO model ready
+Ready. Commands: c=capture, l=toggle LED, m=toggle preprocess, +=raise conf, -=lower conf
+METER|READING=BOOT|CONF=1.00|STATUS=READY
+Camera ready
+FOMO model schema OK
+FOMO tensor arena allocated: 409600 bytes at 0x3f825cf0
+Calling FOMO AllocateTensors()...
+FOMO AllocateTensors status=0
+FOMO Input type=9 dims=1,96,96,1 scale=0.003921569 zero=-128 bytes=9216
+FOMO Output type=9 dims=1,12,12,2 scale=0.003906250 zero=-128 bytes=288
+FOMO model ready
+Model schema OK
+Tensor arena allocated: 2560000 bytes at 0x3f88bcf4
+Calling AllocateTensors()...
+AllocateTensors status=0
+Input type=9 dims=1,160,160,3 scale=0.003921569 zero=-128 bytes=76800
+Output type=9 dims=1,15,1600 scale=0.003893295 zero=-128 bytes=24000
+YOLO model ready
+Ready. Commands: c=capture, l=toggle LED, m=toggle preprocess, +=raise conf, -=lower conf
+METER|READING=BOOT|CONF=1.00|STATUS=READY
+YOLO preprocess mode now: STRETCH
+YOLO preprocess mode now: LETTERBOX
+Camera ready
+FOMO model schema OK
+FOMO tensor arena allocated: 409600 bytes at 0x3f825cf0
+Calling FOMO AllocateTensors()...
+FOMO AllocateTensors status=0
+FOMO Input type=9 dims=1,96,96,1 scale=0.003921569 zero=-128 bytes=9216
+FOMO Output type=9 dims=1,12,12,2 scale=0.003906250 zero=-128 bytes=288
+FOMO model ready
+Model schema OK
+Tensor arena allocated: 2560000 bytes at 0x3f88bcf4
+Calling AllocateTensors()...
+AllocateTensors status=0
+Input type=9 dims=1,160,160,3 scale=0.003921569 zero=-128 bytes=76800
+Output type=9 dims=1,15,1600 scale=0.003893295 zero=-128 bytes=24000
+YOLO model ready
+Ready. Commands: c=capture, l=toggle LED, m=toggle preprocess, +=raise conf, -=lower conf
+METER|READING=BOOT|CONF=1.00|STATUS=READY
+LED toggled by button: ON
+--- FOMO-crop + YOLO workflow start ---
+saveCounter=1 LED=ON
+Captured frame: 640x480 len=16250
+Sending PROCESSING status...
+METER|READING=....|CONF=0.00|STATUS=PROCESSING
+Saved /full_0001.jpg (16250 bytes)
+FOMO input mode=FIT_SHORTEST resized=128x96 off=16,0 scale=0.2000
+Before FOMO Invoke: freeHeap=240964 freePsram=66344
+FOMO Invoke status=0 time_ms=700
+FOMO best input=[72,8,8,8] fullCenter=(460,60) conf=0.988 above=1
+Using FOMO crop: center=(460,60) conf=0.988
+Saved /crop_0001.bmp (352x86 BMP)
+Crop=[288,22,640,108] cropWH=352x86 mode=LETTERBOX new=160x39 pad=0,60
+Saved /yolo_input_0001.bmp (160x160 YOLO input BMP)
+Before Invoke: freeHeap=240964 freePsram=1000236
+Invoke status=0 time_ms=14069
+After Invoke: freeHeap=240964 freePsram=1000236
+YOLO L0 stats: maxClass=0.7826 class=0 idx=784 classAbove=0.15:27 geomRaw:0 geomNorm:27
+YOLO L0 boxes: cx 0.0117..0.9889 cy 0.0195..0.9461 w 0.0156..0.7164 h 0.0311..0.6463
+YOLO L1 stats: maxClass=0.9889 class=. idx=47 classAbove=0.15:389 geomRaw:0 geomNorm:375
+YOLO L1 boxes: cx 0.0000..0.9383 cy 0.0000..0.9422 w 0.0000..0.9461 h 0.0000..0.9655
+YOLO mode test: layout=0 normBoxes=0 candidates=0
+YOLO mode test: layout=0 normBoxes=1 candidates=27
+YOLO mode test: layout=1 normBoxes=0 candidates=0
+YOLO mode test: layout=1 normBoxes=1 candidates=120
+YOLO FORCED decode: layout=0 normBoxes=1 raw candidates above 0.15: 27
+YOLO row filter: kept 5/5 detections around cy=74.0
+det 00: 9 conf=0.311 cx=56.1 cy=73.5 w=13.7 h=21.2
+det 01: 5 conf=0.619 cx=68.5 cy=73.5 w=13.7 h=21.8
+det 02: 7 conf=0.720 cx=81.6 cy=73.5 w=11.8 h=19.3
+det 03: 0 conf=0.783 cx=94.7 cy=74.8 w=13.7 h=20.6
+det 04: 4 conf=0.689 cx=108.4 cy=74.1 w=13.1 h=18.1
+FINAL reading=95704 avgConf=0.624 detCount=5 status=LOW_CONF
+METER|READING=95704|CONF=0.62|STATUS=LOW_CONF
+LED toggled by button: OFF
+Camera ready
+FOMO model schema OK
+FOMO tensor arena allocated: 409600 bytes at 0x3f825cf0
+Calling FOMO AllocateTensors()...
+FOMO AllocateTensors status=0
+FOMO Input type=9 dims=1,96,96,1 scale=0.003921569 zero=-128 bytes=9216
+FOMO Output type=9 dims=1,12,12,2 scale=0.003906250 zero=-128 bytes=288
+FOMO model ready
+Model schema OK
+Tensor arena allocated: 2560000 bytes at 0x3f88bcf4
+Calling AllocateTensors()...
+AllocateTensors status=0
+Input type=9 dims=1,160,160,3 scale=0.003921569 zero=-128 bytes=76800
+Output type=9 dims=1,15,1600 scale=0.003893295 zero=-128 bytes=24000
+YOLO model ready
+Ready. Commands: c=capture, l=toggle LED, m=toggle preprocess, +=raise conf, -=lower conf
+METER|READING=BOOT|CONF=1.00|STATUS=READY
+Camera ready
+FOMO model schema OK
+FOMO tensor arena allocated: 409600 bytes at 0x3f825cf0
+Calling FOMO AllocateTensors()...
+FOMO AllocateTensors status=0
+FOMO Input type=9 dims=1,96,96,1 scale=0.003921569 zero=-128 bytes=9216
+FOMO Output type=9 dims=1,12,12,2 scale=0.003906250 zero=-128 bytes=288
+FOMO model ready
+Model schema OK
+Tensor arena allocated: 2560000 bytes at 0x3f88bcf4
+Calling AllocateTensors()...
+AllocateTensors status=0
+Input type=9 dims=1,160,160,3 scale=0.003921569 zero=-128 bytes=76800
+Output type=9 dims=1,15,1600 scale=0.003893295 zero=-128 bytes=24000
+YOLO model ready
+Ready. Commands: c=capture, l=toggle LED, m=toggle preprocess, +=raise conf, -=lower conf
+METER|READING=BOOT|CONF=1.00|STATUS=READY
+LED toggled by button: ON
+--- FOMO-crop + YOLO workflow start ---
+saveCounter=1 LED=ON
+Captured frame: 640x480 len=16506
+Sending PROCESSING status...
+METER|READING=....|CONF=0.00|STATUS=PROCESSING
+Saved /full_0001.jpg (16506 bytes)
+FOMO input mode=FIT_SHORTEST resized=128x96 off=16,0 scale=0.2000
+Before FOMO Invoke: freeHeap=241072 freePsram=66344
+FOMO Invoke status=0 time_ms=700
+FOMO best input=[72,24,8,8] fullCenter=(460,140) conf=0.996 above=2
+Using FOMO crop: center=(460,140) conf=0.996
+Saved /crop_0001.bmp (352x86 BMP)
+Crop=[288,102,640,188] cropWH=352x86 mode=LETTERBOX new=160x39 pad=0,60
+Saved /yolo_input_0001.bmp (160x160 YOLO input BMP)
+Before Invoke: freeHeap=241072 freePsram=1000236
+Invoke status=0 time_ms=14096
+After Invoke: freeHeap=241072 freePsram=1000236
+YOLO L0 stats: maxClass=0.4205 class=5 idx=739 classAbove=0.15:8 geomRaw:0 geomNorm:8
+YOLO L0 boxes: cx 0.0117..0.9850 cy 0.0195..0.9305 w 0.0195..0.7086 h 0.0273..0.5645
+YOLO L1 stats: maxClass=0.9850 class=5 idx=42 classAbove=0.15:380 geomRaw:0 geomNorm:374
+YOLO L1 boxes: cx 0.0000..0.9188 cy 0.0000..0.9227 w 0.0000..0.9461 h 0.0000..0.9733
+YOLO mode test: layout=0 normBoxes=0 candidates=0
+YOLO mode test: layout=0 normBoxes=1 candidates=8
+YOLO mode test: layout=1 normBoxes=0 candidates=0
+YOLO mode test: layout=1 normBoxes=1 candidates=120
+YOLO FORCED decode: layout=0 normBoxes=1 raw candidates above 0.15: 8
+YOLO row filter: kept 5/5 detections around cy=74.4
+det 00: 4 conf=0.218 cx=64.8 cy=74.8 w=13.7 h=20.6
+det 01: 5 conf=0.420 cx=77.2 cy=74.1 w=12.5 h=20.6
+det 02: 6 conf=0.218 cx=88.5 cy=73.5 w=12.5 h=21.2
+det 03: 5 conf=0.347 cx=100.9 cy=74.8 w=12.5 h=21.2
+det 04: 0 conf=0.218 cx=114.0 cy=74.8 w=12.5 h=20.6
+FINAL reading=45650 avgConf=0.284 detCount=5 status=LOW_CONF
+METER|READING=45650|CONF=0.28|STATUS=LOW_CONF
+--- FOMO-crop + YOLO workflow start ---
+saveCounter=2 LED=ON
+Captured frame: 640x480 len=15946
+Sending PROCESSING status...
+METER|READING=....|CONF=0.00|STATUS=PROCESSING
+Saved /full_0002.jpg (15946 bytes)
+FOMO input mode=FIT_SHORTEST resized=128x96 off=16,0 scale=0.2000
+Before FOMO Invoke: freeHeap=241072 freePsram=66344
+FOMO Invoke status=0 time_ms=699
+FOMO best input=[72,24,8,8] fullCenter=(460,140) conf=0.996 above=4
+Using FOMO crop: center=(460,140) conf=0.996
+Saved /crop_0002.bmp (352x86 BMP)
+Crop=[288,102,640,188] cropWH=352x86 mode=LETTERBOX new=160x39 pad=0,60
+Saved /yolo_input_0002.bmp (160x160 YOLO input BMP)
+Before Invoke: freeHeap=241072 freePsram=1000236
+Invoke status=0 time_ms=14080
+After Invoke: freeHeap=241072 freePsram=1000236
+YOLO L0 stats: maxClass=0.5762 class=8 idx=817 classAbove=0.15:35 geomRaw:0 geomNorm:35
+YOLO L0 boxes: cx 0.0078..0.9889 cy 0.0156..0.9655 w 0.0156..0.6930 h 0.0273..0.5606
+YOLO L1 stats: maxClass=0.9889 class=5 idx=42 classAbove=0.15:379 geomRaw:0 geomNorm:372
+YOLO L1 boxes: cx 0.0000..0.9539 cy 0.0000..0.9578 w 0.0000..0.9616 h 0.0000..0.9733
+YOLO mode test: layout=0 normBoxes=0 candidates=0
+YOLO mode test: layout=0 normBoxes=1 candidates=35
+YOLO mode test: layout=1 normBoxes=0 candidates=0
+YOLO mode test: layout=1 normBoxes=1 candidates=120
+YOLO FORCED decode: layout=0 normBoxes=1 raw candidates above 0.15: 35
+YOLO row filter: kept 6/6 detections around cy=78.4
+det 00: 8 conf=0.347 cx=46.7 cy=78.5 w=12.5 h=19.3
+det 01: 9 conf=0.537 cx=58.6 cy=78.5 w=11.8 h=17.4
+det 02: 8 conf=0.576 cx=70.4 cy=77.9 w=11.2 h=19.3
+det 03: 2 conf=0.311 cx=82.2 cy=78.5 w=11.2 h=19.9
+det 04: 2 conf=0.382 cx=94.1 cy=78.5 w=12.5 h=19.9
+det 05: 2 conf=0.537 cx=106.5 cy=78.5 w=12.5 h=19.9
+FINAL reading=898222 avgConf=0.448 detCount=6 status=LOW_CONF
+METER|READING=898222|CONF=0.45|STATUS=LOW_CONF
+--- FOMO-crop + YOLO workflow start ---
+saveCounter=3 LED=ON
+Captured frame: 640x480 len=15552
+Sending PROCESSING status...
+METER|READING=....|CONF=0.00|STATUS=PROCESSING
+Saved /full_0003.jpg (15552 bytes)
+FOMO input mode=FIT_SHORTEST resized=128x96 off=16,0 scale=0.2000
+Before FOMO Invoke: freeHeap=241072 freePsram=66344
+FOMO Invoke status=0 time_ms=700
+FOMO best input=[64,16,8,8] fullCenter=(420,100) conf=0.965 above=2
+Using FOMO crop: center=(420,100) conf=0.965
+Saved /crop_0003.bmp (352x86 BMP)
+Crop=[288,62,640,148] cropWH=352x86 mode=LETTERBOX new=160x39 pad=0,60
+Saved /yolo_input_0003.bmp (160x160 YOLO input BMP)
+Before Invoke: freeHeap=241072 freePsram=1000236
+Invoke status=0 time_ms=14157
+After Invoke: freeHeap=241072 freePsram=1000236
+YOLO L0 stats: maxClass=0.8059 class=6 idx=816 classAbove=0.15:24 geomRaw:0 geomNorm:24
+YOLO L0 boxes: cx 0.0078..0.9889 cy 0.0156..0.9694 w 0.0156..0.6813 h 0.0234..0.6580
+YOLO L1 stats: maxClass=0.9889 class=5 idx=42 classAbove=0.15:389 geomRaw:0 geomNorm:378
+YOLO L1 boxes: cx 0.0000..0.9616 cy 0.0000..0.9616 w 0.0000..0.9655 h 0.0000..0.9733
+YOLO mode test: layout=0 normBoxes=0 candidates=0
+YOLO mode test: layout=0 normBoxes=1 candidates=24
+YOLO mode test: layout=1 normBoxes=0 candidates=0
+YOLO mode test: layout=1 normBoxes=1 candidates=120
+YOLO FORCED decode: layout=0 normBoxes=1 raw candidates above 0.15: 24
+YOLO row filter: kept 5/5 detections around cy=80.8
+det 00: 9 conf=0.537 cx=36.1 cy=82.2 w=13.1 h=20.6
+det 01: 5 conf=0.420 cx=51.1 cy=81.0 w=12.5 h=19.9
+det 02: 6 conf=0.806 cx=64.2 cy=80.4 w=12.5 h=21.2
+det 03: 5 conf=0.498 cx=76.0 cy=81.0 w=12.5 h=19.9
+det 04: 6 conf=0.498 cx=90.3 cy=79.7 w=14.3 h=19.9
+FINAL reading=95656 avgConf=0.552 detCount=5 status=LOW_CONF
+METER|READING=95656|CONF=0.55|STATUS=LOW_CONF
+LED toggled by button: OFF
+LED toggled by button: ON
+--- FOMO-crop + YOLO workflow start ---
+saveCounter=4 LED=ON
+Captured frame: 640x480 len=16727
+Sending PROCESSING status...
+METER|READING=....|CONF=0.00|STATUS=PROCESSING
+Saved /full_0004.jpg (16727 bytes)
+FOMO input mode=FIT_SHORTEST resized=128x96 off=16,0 scale=0.2000
+Before FOMO Invoke: freeHeap=241072 freePsram=66344
+FOMO Invoke status=0 time_ms=699
+FOMO best input=[72,16,8,8] fullCenter=(460,100) conf=0.977 above=3
+Using FOMO crop: center=(460,100) conf=0.977
+Saved /crop_0004.bmp (352x86 BMP)
+Crop=[288,62,640,148] cropWH=352x86 mode=LETTERBOX new=160x39 pad=0,60
+Saved /yolo_input_0004.bmp (160x160 YOLO input BMP)
+Before Invoke: freeHeap=241072 freePsram=1000236
+Invoke status=0 time_ms=14098
+After Invoke: freeHeap=241072 freePsram=1000236
+YOLO L0 stats: maxClass=0.8059 class=0 idx=786 classAbove=0.15:42 geomRaw:0 geomNorm:42
+YOLO L0 boxes: cx 0.0039..0.9889 cy 0.0156..0.9461 w 0.0156..0.7125 h 0.0273..0.6346
+YOLO L1 stats: maxClass=0.9889 class=0 idx=45 classAbove=0.15:377 geomRaw:0 geomNorm:364
+YOLO L1 boxes: cx 0.0000..0.9344 cy 0.0000..0.9344 w 0.0000..0.9500 h 0.0000..0.9578
+YOLO mode test: layout=0 normBoxes=0 candidates=0
+YOLO mode test: layout=0 normBoxes=1 candidates=42
+YOLO mode test: layout=1 normBoxes=0 candidates=0
+YOLO mode test: layout=1 normBoxes=1 candidates=120
+YOLO FORCED decode: layout=0 normBoxes=1 raw candidates above 0.15: 42
+YOLO row filter: kept 8/8 detections around cy=77.4
+det 00: 5 conf=0.195 cx=33.6 cy=77.2 w=10.0 h=18.1
+det 01: 0 conf=0.420 cx=44.9 cy=77.2 w=11.2 h=18.1
+det 02: 7 conf=0.280 cx=56.1 cy=77.2 w=10.6 h=17.4
+det 03: 0 conf=0.783 cx=66.7 cy=77.2 w=10.6 h=16.8
+det 04: 0 conf=0.720 cx=76.6 cy=77.2 w=10.6 h=17.4
+det 05: 6 conf=0.382 cx=86.6 cy=77.2 w=8.7 h=19.3
+det 06: 6 conf=0.347 cx=97.2 cy=77.2 w=10.0 h=17.4
+det 07: 0 conf=0.806 cx=109.0 cy=77.9 w=11.2 h=17.4
+FINAL reading=50700660 avgConf=0.492 detCount=8 status=LOW_CONF
+METER|READING=50700660|CONF=0.49|STATUS=LOW_CONF
+--- FOMO-crop + YOLO workflow start ---
+saveCounter=5 LED=ON
+Captured frame: 640x480 len=16046
+Sending PROCESSING status...
+METER|READING=....|CONF=0.00|STATUS=PROCESSING
+Saved /full_0005.jpg (16046 bytes)
+FOMO input mode=FIT_SHORTEST resized=128x96 off=16,0 scale=0.2000
+Before FOMO Invoke: freeHeap=241072 freePsram=66344
+FOMO Invoke status=0 time_ms=700
+FOMO best input=[48,0,8,8] fullCenter=(340,20) conf=0.102 above=0
+FOMO failed; using fixed crop fallback
+Saved /crop_0005.bmp (420x180 BMP)
+Crop=[220,95,640,275] cropWH=420x180 mode=LETTERBOX new=160x69 pad=0,45
+Saved /yolo_input_0005.bmp (160x160 YOLO input BMP)
+Before Invoke: freeHeap=241072 freePsram=1000236
+Invoke status=0 time_ms=14123
+After Invoke: freeHeap=241072 freePsram=1000236
+YOLO L0 stats: maxClass=0.2492 class=0 idx=914 classAbove=0.15:2 geomRaw:0 geomNorm:2
+YOLO L0 boxes: cx 0.0117..0.9889 cy 0.0234..0.9850 w 0.0195..0.6268 h 0.0234..0.4322
+YOLO L1 stats: maxClass=0.9889 class=0 idx=37 classAbove=0.15:314 geomRaw:0 geomNorm:313
+YOLO L1 boxes: cx 0.0000..0.9772 cy 0.0000..0.9811 w 0.0000..0.9811 h 0.0000..0.9850
+YOLO mode test: layout=0 normBoxes=0 candidates=0
+YOLO mode test: layout=0 normBoxes=1 candidates=2
+YOLO mode test: layout=1 normBoxes=0 candidates=0
+YOLO mode test: layout=1 normBoxes=1 candidates=120
+YOLO FORCED decode: layout=0 normBoxes=1 raw candidates above 0.15: 2
+det 00: 0 conf=0.249 cx=139.5 cy=89.7 w=15.6 h=16.2
+FINAL reading=0 avgConf=0.249 detCount=1 status=FEW_DIGITS
+METER|READING=0|CONF=0.25|STATUS=FEW_DIGITS
+--- FOMO-crop + YOLO workflow start ---
+saveCounter=6 LED=ON
+Captured frame: 640x480 len=16339
+Sending PROCESSING status...
+METER|READING=....|CONF=0.00|STATUS=PROCESSING
+Saved /full_0006.jpg (16339 bytes)
+FOMO input mode=FIT_SHORTEST resized=128x96 off=16,0 scale=0.2000
+Before FOMO Invoke: freeHeap=241072 freePsram=66344
+FOMO Invoke status=0 time_ms=700
+FOMO best input=[64,32,8,8] fullCenter=(420,180) conf=0.992 above=3
+Using FOMO crop: center=(420,180) conf=0.992
+Saved /crop_0006.bmp (352x86 BMP)
+Crop=[288,142,640,228] cropWH=352x86 mode=LETTERBOX new=160x39 pad=0,60
+Saved /yolo_input_0006.bmp (160x160 YOLO input BMP)
+Before Invoke: freeHeap=241072 freePsram=1000236
+Invoke status=0 time_ms=14104
+After Invoke: freeHeap=241072 freePsram=1000236
+YOLO L0 stats: maxClass=0.8059 class=0 idx=774 classAbove=0.15:39 geomRaw:0 geomNorm:39
+YOLO L0 boxes: cx 0.0117..0.9889 cy 0.0117..0.9694 w 0.0195..0.6696 h 0.0273..0.5528
+YOLO L1 stats: maxClass=0.9889 class=0 idx=45 classAbove=0.15:378 geomRaw:0 geomNorm:369
+YOLO L1 boxes: cx 0.0000..0.9655 cy 0.0000..0.9694 w 0.0000..0.9694 h 0.0000..0.9733
+YOLO mode test: layout=0 normBoxes=0 candidates=0
+YOLO mode test: layout=0 normBoxes=1 candidates=39
+YOLO mode test: layout=1 normBoxes=0 candidates=0
+YOLO mode test: layout=1 normBoxes=1 candidates=120
+YOLO FORCED decode: layout=0 normBoxes=1 raw candidates above 0.15: 39
+YOLO row filter: kept 8/8 detections around cy=80.4
+det 00: 0 conf=0.783 cx=34.9 cy=80.4 w=13.1 h=19.3
+det 01: 0 conf=0.720 cx=46.7 cy=79.7 w=11.2 h=18.7
+det 02: 0 conf=0.806 cx=58.6 cy=80.4 w=11.8 h=19.3
+det 03: 3 conf=0.218 cx=69.8 cy=80.4 w=10.6 h=19.3
+det 04: 0 conf=0.806 cx=81.0 cy=81.0 w=12.5 h=19.3
+det 05: 5 conf=0.280 cx=94.1 cy=81.0 w=11.2 h=19.3
+det 06: 1 conf=0.619 cx=106.5 cy=80.4 w=12.5 h=19.3
+det 07: 6 conf=0.280 cx=118.4 cy=81.0 w=13.1 h=21.2
+FINAL reading=00030516 avgConf=0.564 detCount=8 status=LOW_CONF
+METER|READING=00030516|CONF=0.56|STATUS=LOW_CONF
+--- FOMO-crop + YOLO workflow start ---
+saveCounter=7 LED=ON
+Captured frame: 640x480 len=16040
+Sending PROCESSING status...
+METER|READING=....|CONF=0.00|STATUS=PROCESSING
+Saved /full_0007.jpg (16040 bytes)
+FOMO input mode=FIT_SHORTEST resized=128x96 off=16,0 scale=0.2000
+Before FOMO Invoke: freeHeap=241072 freePsram=66344
+FOMO Invoke status=0 time_ms=700
+FOMO best input=[56,32,8,8] fullCenter=(380,180) conf=0.996 above=4
+Using FOMO crop: center=(380,180) conf=0.996
+Saved /crop_0007.bmp (352x86 BMP)
+Crop=[249,142,601,228] cropWH=352x86 mode=LETTERBOX new=160x39 pad=0,60
+Saved /yolo_input_0007.bmp (160x160 YOLO input BMP)
+Before Invoke: freeHeap=241072 freePsram=1000236
+Invoke status=0 time_ms=14102
+After Invoke: freeHeap=241072 freePsram=1000236
+YOLO L0 stats: maxClass=0.7514 class=3 idx=737 classAbove=0.15:44 geomRaw:0 geomNorm:44
+YOLO L0 boxes: cx 0.0078..0.9889 cy 0.0156..0.9616 w 0.0156..0.6502 h 0.0273..0.5256
+YOLO L1 stats: maxClass=0.9889 class=5 idx=42 classAbove=0.15:388 geomRaw:0 geomNorm:370
+YOLO L1 boxes: cx 0.0000..0.9616 cy 0.0000..0.9616 w 0.0000..0.9578 h 0.0000..0.9694
+YOLO mode test: layout=0 normBoxes=0 candidates=0
+YOLO mode test: layout=0 normBoxes=1 candidates=44
+YOLO mode test: layout=1 normBoxes=0 candidates=0
+YOLO mode test: layout=1 normBoxes=1 candidates=120
+YOLO FORCED decode: layout=0 normBoxes=1 raw candidates above 0.15: 44
+YOLO row filter: kept 10/10 detections around cy=78.0
+det 00: 7 conf=0.195 cx=10.0 cy=79.1 w=13.1 h=16.8
+det 01: 8 conf=0.218 cx=21.8 cy=77.2 w=12.5 h=18.1
+det 02: 0 conf=0.689 cx=33.0 cy=76.6 w=13.1 h=19.9
+det 03: 0 conf=0.347 cx=46.1 cy=77.9 w=13.7 h=19.3
+det 04: 0 conf=0.751 cx=57.9 cy=77.9 w=11.8 h=19.3
+det 05: 3 conf=0.751 cx=69.8 cy=77.9 w=11.8 h=20.6
+det 06: 0 conf=0.218 cx=81.6 cy=77.9 w=13.1 h=19.3
+det 07: 5 conf=0.420 cx=94.1 cy=78.5 w=13.1 h=20.6
+det 08: 1 conf=0.347 cx=108.4 cy=79.7 w=10.0 h=19.3
+det 09: 5 conf=0.311 cx=119.0 cy=79.7 w=13.1 h=19.3
+FINAL reading=7800030515 avgConf=0.425 detCount=10 status=LOW_CONF
+METER|READING=7800030515|CONF=0.42|STATUS=LOW_CONF
+--- FOMO-crop + YOLO workflow start ---
+saveCounter=8 LED=ON
+Captured frame: 640x480 len=15161
+Sending PROCESSING status...
+METER|READING=....|CONF=0.00|STATUS=PROCESSING
+Saved /full_0008.jpg (15161 bytes)
+FOMO input mode=FIT_SHORTEST resized=128x96 off=16,0 scale=0.2000
+Before FOMO Invoke: freeHeap=241072 freePsram=66344
+FOMO Invoke status=0 time_ms=700
+FOMO best input=[64,32,8,8] fullCenter=(420,180) conf=0.996 above=1
+Using FOMO crop: center=(420,180) conf=0.996
+Saved /crop_0008.bmp (352x86 BMP)
+Crop=[288,142,640,228] cropWH=352x86 mode=LETTERBOX new=160x39 pad=0,60
+Saved /yolo_input_0008.bmp (160x160 YOLO input BMP)
+Before Invoke: freeHeap=241072 freePsram=1000236
+Invoke status=0 time_ms=14146
+After Invoke: freeHeap=241072 freePsram=1000236
+YOLO L0 stats: maxClass=0.7514 class=0 idx=810 classAbove=0.15:21 geomRaw:0 geomNorm:21
+YOLO L0 boxes: cx 0.0117..0.9889 cy 0.0195..0.9772 w 0.0195..0.4983 h 0.0234..0.6891
+YOLO L1 stats: maxClass=0.9889 class=0 idx=45 classAbove=0.15:385 geomRaw:0 geomNorm:377
+YOLO L1 boxes: cx 0.0000..0.9733 cy 0.0000..0.9733 w 0.0000..0.9772 h 0.0000..0.9733
+YOLO mode test: layout=0 normBoxes=0 candidates=0
+YOLO mode test: layout=0 normBoxes=1 candidates=21
+YOLO mode test: layout=1 normBoxes=0 candidates=0
+YOLO mode test: layout=1 normBoxes=1 candidates=120
+YOLO FORCED decode: layout=0 normBoxes=1 raw candidates above 0.15: 21
+YOLO row filter: kept 4/4 detections around cy=84.8
+det 00: 0 conf=0.751 cx=40.5 cy=84.7 w=15.0 h=20.6
+det 01: 7 conf=0.218 cx=52.9 cy=84.1 w=12.5 h=19.9
+det 02: 0 conf=0.751 cx=66.7 cy=84.7 w=13.7 h=20.6
+det 03: 4 conf=0.689 cx=79.1 cy=85.3 w=13.7 h=20.6
+FINAL reading=0704 avgConf=0.602 detCount=4 status=FEW_DIGITS
+METER|READING=0704|CONF=0.60|STATUS=FEW_DIGITS
+--- FOMO-crop + YOLO workflow start ---
+saveCounter=9 LED=ON
+Captured frame: 640x480 len=15876
+Sending PROCESSING status...
+METER|READING=....|CONF=0.00|STATUS=PROCESSING
+Saved /full_0009.jpg (15876 bytes)
+FOMO input mode=FIT_SHORTEST resized=128x96 off=16,0 scale=0.2000
+Before FOMO Invoke: freeHeap=241072 freePsram=66344
+FOMO Invoke status=0 time_ms=700
+FOMO best input=[56,24,8,8] fullCenter=(380,140) conf=0.957 above=4
+Using FOMO crop: center=(380,140) conf=0.957
+Saved /crop_0009.bmp (352x86 BMP)
+Crop=[249,102,601,188] cropWH=352x86 mode=LETTERBOX new=160x39 pad=0,60
+Saved /yolo_input_0009.bmp (160x160 YOLO input BMP)
+Before Invoke: freeHeap=241072 freePsram=1000236
+Invoke status=0 time_ms=14102
+After Invoke: freeHeap=241072 freePsram=1000236
+YOLO L0 stats: maxClass=0.7826 class=0 idx=653 classAbove=0.15:28 geomRaw:0 geomNorm:28
+YOLO L0 boxes: cx 0.0078..0.9889 cy 0.0195..0.9383 w 0.0156..0.7086 h 0.0234..0.5139
+YOLO L1 stats: maxClass=0.9889 class=. idx=47 classAbove=0.15:389 geomRaw:0 geomNorm:378
+YOLO L1 boxes: cx 0.0000..0.9032 cy 0.0000..0.9188 w 0.0000..0.9344 h 0.0000..0.9616
+YOLO mode test: layout=0 normBoxes=0 candidates=0
+YOLO mode test: layout=0 normBoxes=1 candidates=28
+YOLO mode test: layout=1 normBoxes=0 candidates=0
+YOLO mode test: layout=1 normBoxes=1 candidates=120
+YOLO FORCED decode: layout=0 normBoxes=1 raw candidates above 0.15: 28
+YOLO row filter: kept 4/4 detections around cy=70.9
+det 00: 0 conf=0.783 cx=51.7 cy=71.0 w=13.1 h=21.8
+det 01: 3 conf=0.751 cx=65.4 cy=71.0 w=12.5 h=19.9
+det 02: 8 conf=0.654 cx=79.1 cy=70.4 w=13.1 h=20.6
+det 03: 4 conf=0.751 cx=92.8 cy=71.0 w=13.1 h=18.1
+FINAL reading=0384 avgConf=0.735 detCount=4 status=FEW_DIGITS
+METER|READING=0384|CONF=0.73|STATUS=FEW_DIGITS
+LED toggled by button: OFF
