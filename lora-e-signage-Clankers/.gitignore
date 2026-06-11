@@ -1,0 +1,14 @@
+# Local credentials
+.env
+.env.*
+!.env.example
+secrets.h
+
+# Generated and local tooling
+build/
+node_modules/
+.agents/
+*.log
+*.tmp
+*.swp
+*~
