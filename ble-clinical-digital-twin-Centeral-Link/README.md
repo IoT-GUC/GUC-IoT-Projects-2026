@@ -305,6 +305,55 @@ The analytics engine computes the following metrics from the records table, expo
 
 ---
 
+## Local Setup
+
+### Device Setup
+
+- Open clinic-iot-devices/ble_sender/ble_sender.ino in Arduino IDE
+- Install BLE libraries as in tutorial slides
+- Compile and upload to BLE device
+
+### Routers Setup
+
+- Open clinic-iot-routers in VScode
+- Create virtual enviromnent
+- Install requirements.txt, using the command ``pip install -r requirements.txt``
+- Rename .env.example to .env
+- Run the ``python3 main.py`` file
+
+### OracleDB Setup
+
+- Create new Oracle database
+- Setup database using ``clinic-iot-deployment/database-setup.sql``
+
+### MQTT Setup
+
+- Install Mosquitto MQTT Broker
+- Configure MQTT Basic Port 1883
+- Create MQTT username and password
+- Start Mosquitto
+
+The steps are in details in the file ``clinic-iot-deployment/VM Config.md``
+
+### Backend Setup
+
+- Open clinic-iot-backend in VScode
+- Install dependencies using the command ``npm install``
+- Rename .env.example to .env
+- Fill MQTT broker and Oracle DB .env variables
+- Run ``node server.js``
+
+### Frontend Setup
+
+- Open clinic-iot-frontend in VScode
+- Install requirements.txt, using the command ``pip install -r requirements.txt``
+- Rename .env.example to .env 
+- Run ``python3 app.py``
+
+
+
+---
+
 ## Academic References
 
 | Authors | Title | Source |
