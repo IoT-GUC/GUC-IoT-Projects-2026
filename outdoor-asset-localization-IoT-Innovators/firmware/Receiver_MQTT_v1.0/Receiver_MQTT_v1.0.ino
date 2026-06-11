@@ -9,8 +9,8 @@
 // WiFi Configuration
 // =======================================================
 // Change these before uploading
-const char* WIFI_SSID = "Rahma Mohamed's S25 Ultra";
-const char* WIFI_PASSWORD = "roro_1623";
+const char* WIFI_SSID = "Farah's S23 Ultra";
+const char* WIFI_PASSWORD = "farahotspot34";
 
 // =======================================================
 // MQTT Configuration

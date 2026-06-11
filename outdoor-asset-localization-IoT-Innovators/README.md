@@ -1,5 +1,6 @@
 # Outdoor Asset Localization
 
+---
 ## Project Overview
 
 This project implements an IoT-based outdoor asset localization system using a **NEO-6M GPS module** and **LILYGO TTGO LoRa32 boards**.
@@ -30,6 +31,850 @@ NETW1010: Internet of Things
 - Rahma Mohamed
 
 ---
+# Complete Project Implementation Steps
+
+This section explains the full project workflow from hardware assembly to firmware upload, backend setup, Firebase storage, dashboard testing, and final demo validation. It is placed at the beginning of the README so anyone reading the repository can understand how the project was built and how to run it end-to-end.
+
+## Step 0 — Understand the Final System Idea
+
+The project tracks an outdoor asset using a GPS module and two TTGO LoRa32 boards.
+
+The final working architecture is:
+
+```text
+NEO-6M GPS
+   ↓ UART
+TTGO LoRa32 Sender
+   ↓ LoRa radio packet
+TTGO LoRa32 Receiver / Gateway
+   ↓ WiFi + MQTT
+MQTT Broker
+   ↓ MQTT subscription
+Python MQTT-to-Firebase Bridge
+   ↓ HTTP request
+Firebase Realtime Database
+   ↓ Firebase REST reads
+Dashboard V2 / Google Maps Dashboard
+```
+
+The most important design decision is that the sender and receiver do different jobs:
+
+```text
+Sender  = GPS + LoRa only
+Receiver = LoRa + WiFi + MQTT gateway
+```
+
+The sender does not connect to WiFi. This keeps the moving unit simpler and more power-friendly. The receiver is the gateway that forwards data to the internet.
+
+---
+
+## Step 1 — Prepare the Hardware Components
+
+The required hardware is:
+
+| Component | Quantity | Purpose |
+|---|---:|---|
+| LILYGO TTGO LoRa32 board | 2 | One board is the sender, one board is the receiver/gateway |
+| NEO-6M GPS module | 1 | Reads latitude, longitude, UTC time, satellites, and HDOP |
+| LoRa antennas | 2 | One antenna for each TTGO LoRa32 board |
+| Female-to-female jumper wires | 3 minimum | Connect GPS module to sender board |
+| USB data cables | 2 | Upload firmware and power/debug boards |
+| Laptop | 1 | Arduino IDE, Python backend, Firebase, dashboards |
+| 3.7V LiPo battery or USB power bank | 1 | Powers sender independently during final demo |
+
+Important hardware note:
+
+```text
+Always attach the LoRa antenna before powering the TTGO LoRa32 boards.
+```
+
+This protects the LoRa radio module and improves communication reliability.
+
+---
+
+## Step 2 — Assemble the Sender Hardware
+
+The sender is the moving unit. It is placed on the asset, for example a golf car, shuttle, or moving outdoor object.
+
+The sender contains:
+
+```text
+TTGO LoRa32 Sender + NEO-6M GPS + LoRa Antenna + Battery/Power Bank
+```
+
+### Sender Wiring
+
+Connect the NEO-6M GPS module to the sender TTGO board as follows:
+
+| GPS Pin | TTGO LoRa32 Sender Pin | Purpose |
+|---|---|---|
+| VCC | 5V | Powers the GPS module |
+| GND | GND | Shared ground |
+| TXD | GPIO34 | Sends GPS serial data to ESP32 |
+| RXD | Not connected | Not needed because the sender only reads from GPS |
+
+Practical wiring summary:
+
+```text
+GPS VCC  → TTGO 5V
+GPS GND  → TTGO GND
+GPS TXD  → TTGO GPIO34
+GPS RXD  → Leave disconnected
+```
+
+Why this wiring is used:
+
+- The GPS module sends NMEA serial sentences through its TXD pin.
+- The ESP32 sender reads those GPS sentences on GPIO34.
+- The GPS RXD pin is not needed because the project does not send commands back to the GPS module.
+- The GPS antenna should face upward toward open sky for faster satellite lock.
+
+### Sender Power Setup
+
+During development, the sender can be powered through USB.
+
+During the final demo, the sender should be powered independently using:
+
+```text
+3.7V LiPo battery
+or
+USB power bank
+```
+
+This proves that the sender is actually wireless and not dependent on a laptop.
+
+### Battery Monitoring Note
+
+The final sender firmware reads battery voltage using:
+
+```text
+GPIO35
+```
+
+Many TTGO LoRa32 boards expose battery voltage through GPIO35 using a voltage divider. If the reading is unrealistic, the exact TTGO board version may use a different battery ADC pin.
+
+---
+
+## Step 3 — Assemble the Receiver Hardware
+
+The receiver is the gateway node. It does not connect to the GPS module.
+
+The receiver hardware setup is:
+
+```text
+TTGO LoRa32 Receiver + LoRa Antenna + USB Power
+```
+
+Receiver setup steps:
+
+1. Attach the LoRa antenna.
+2. Connect the receiver TTGO board to the laptop using USB.
+3. Upload the `Receiver_MQTT_v1.0` firmware.
+4. Keep the receiver near the laptop or presentation area.
+5. Make sure the receiver has access to WiFi after firmware upload.
+
+The receiver listens for LoRa packets from the sender, converts them to JSON, and publishes them to MQTT over WiFi.
+
+---
+
+## Step 4 — Install Arduino IDE Requirements
+
+Install the Arduino IDE, then prepare ESP32 support.
+
+### ESP32 Board Package
+
+In Arduino IDE:
+
+1. Open **File → Preferences**.
+2. Add the ESP32 board manager URL if not already added.
+3. Open **Tools → Board → Boards Manager**.
+4. Search for `esp32`.
+5. Install the ESP32 board package.
+
+Recommended board option:
+
+```text
+TTGO-LoRa32-OLED
+```
+
+Alternative board option:
+
+```text
+ESP32 Dev Module
+```
+
+### Arduino Libraries
+
+Install these libraries from Arduino Library Manager:
+
+```text
+TinyGPSPlus
+LoRa
+PubSubClient
+ArduinoJson
+```
+
+Library purpose:
+
+| Library | Used By | Purpose |
+|---|---|---|
+| TinyGPSPlus | Sender | Parses GPS NMEA data |
+| LoRa | Sender + Receiver | Sends and receives LoRa packets |
+| PubSubClient | Receiver | Publishes messages to MQTT |
+| ArduinoJson | Receiver | Builds MQTT JSON payload |
+| WiFi.h | Receiver | ESP32 WiFi connection; included with ESP32 package |
+
+---
+
+## Step 5 — Upload the Final Sender Firmware
+
+Open the final sender firmware:
+
+```text
+firmware/Sender_MultiAsset_PowerTuned_v1.0/Sender_MultiAsset_PowerTuned_v1.0.ino
+```
+
+Check the GPS pin configuration:
+
+```cpp
+#define GPS_RX_PIN 34
+#define GPS_TX_PIN -1
+```
+
+Check the LoRa pin/frequency configuration:
+
+```cpp
+#define LORA_SS    18
+#define LORA_RST   14
+#define LORA_DIO0  26
+#define LORA_BAND  868E6
+```
+
+The sender and receiver must use the same LoRa frequency:
+
+```text
+868E6
+```
+
+Select one transmission mode in the sender firmware:
+
+```cpp
+#define NORMAL_MODE
+```
+
+Available modes:
+
+| Mode | Interval | Use Case |
+|---|---:|---|
+| DEMO_MODE | 3 seconds | Fast live demo |
+| NORMAL_MODE | 5 seconds | Balanced operation |
+| POWER_SAVING_MODE | 15 seconds | Lower transmission frequency |
+
+Upload steps:
+
+1. Connect the sender TTGO board to the laptop.
+2. Select the correct board and COM port in Arduino IDE.
+3. Upload the sender firmware.
+4. Open Serial Monitor at `115200 baud`.
+5. Confirm that LoRa initializes successfully.
+6. Move the GPS antenna outdoors or near a window/open sky.
+7. Wait for GPS characters and eventually a valid GPS fix.
+
+Expected sender Serial Monitor output:
+
+```text
+IoT Innovators - Multi-Asset Power-Tuned Sender
+Mode: No OLED / Battery Friendly Sender
+Week 4 Feature: Battery Voltage Monitoring
+LoRa init OK
+Sender ready.
+Waiting for GPS data...
+LoRa Packet Sent
+Battery Voltage: 3.84 V
+```
+
+After the firmware is uploaded and verified, disconnect USB and power the sender with a LiPo battery or power bank for the final demo.
+
+---
+
+## Step 6 — Upload the Final Receiver MQTT Firmware
+
+Open the final receiver firmware:
+
+```text
+firmware/Receiver_MQTT_v1.0/Receiver_MQTT_v1.0.ino
+```
+
+Before uploading, update the WiFi credentials locally:
+
+```cpp
+const char* WIFI_SSID = "YOUR_WIFI_NAME";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+```
+
+Check the MQTT broker settings:
+
+```cpp
+const char* MQTT_SERVER = "broker.hivemq.com";
+const int MQTT_PORT = 1883;
+```
+
+Check the MQTT topics:
+
+```text
+iot-innovators/assets/all
+iot-innovators/assets/<deviceID>/location
+iot-innovators/gateway/status
+iot-innovators/gateway/debug
+```
+
+Check the LoRa frequency:
+
+```cpp
+#define LORA_BAND 868E6
+```
+
+It must match the sender.
+
+Upload steps:
+
+1. Connect the receiver TTGO board to the laptop.
+2. Select the correct board and COM port in Arduino IDE.
+3. Upload `Receiver_MQTT_v1.0.ino`.
+4. Open Serial Monitor at `115200 baud`.
+5. Confirm WiFi connection.
+6. Confirm MQTT connection.
+7. Confirm LoRa receiver initialization.
+
+Expected receiver Serial Monitor output:
+
+```text
+IoT Innovators LoRa MQTT Receiver
+Device: receiver01
+Mode: LoRa to WiFi/MQTT Gateway
+WiFi connected successfully.
+Connecting to MQTT broker... connected.
+LoRa receiver initialized successfully.
+Receiver is ready.
+Waiting for LoRa packets...
+```
+
+When the sender transmits, the receiver should show:
+
+```text
+LoRa Packet Received
+Payload parsed successfully.
+MQTT JSON Payload:
+MQTT publish successful.
+```
+
+---
+
+## Step 7 — Create and Configure Firebase Realtime Database
+
+Firebase is used to store the latest location and history records.
+
+Setup steps:
+
+1. Open Firebase Console.
+2. Create a Firebase project.
+3. Create a Realtime Database.
+4. Copy the database URL.
+5. Use that URL in the backend bridge as `FIREBASE_BASE_URL`.
+6. Add simple demo database rules for testing.
+
+Demo rules:
+
+```json
+{
+  "rules": {
+    "assets": {
+      ".read": true,
+      ".write": true
+    },
+    ".read": false,
+    ".write": false
+  }
+}
+```
+
+Expected database structure:
+
+```text
+assets
+ └── ASSET-03
+      ├── latest
+      │    ├── deviceID
+      │    ├── latitude
+      │    ├── longitude
+      │    ├── timestamp_utc
+      │    ├── battery_voltage
+      │    ├── battery_status
+      │    ├── rssi
+      │    └── packet_count
+      │
+      └── history
+           ├── record1
+           ├── record2
+           └── record3
+```
+
+For a production system, the Firebase rules should be secured using authentication or a server-side admin SDK. The open rules above are only for academic demo testing.
+
+---
+
+## Step 8 — Run the MQTT-to-Firebase Backend
+
+The backend bridge subscribes to MQTT messages and uploads them to Firebase.
+
+Open a terminal in the backend folder:
+
+```bash
+cd backend
+```
+
+Create a virtual environment:
+
+```bash
+python -m venv venv
+```
+
+Activate it on Windows PowerShell:
+
+```bash
+.\venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Optional environment configuration:
+
+```bash
+set FIREBASE_BASE_URL=https://your-database-name.firebaseio.com
+set MQTT_BROKER=broker.hivemq.com
+set MQTT_PORT=1883
+set MQTT_TOPIC_ALL=iot-innovators/assets/all
+```
+
+Run the backend:
+
+```bash
+python mqtt_to_firebase.py
+```
+
+Expected backend output:
+
+```text
+IoT Innovators MQTT to Firebase Bridge
+Mode: MQTT Broker -> Firebase Realtime DB
+Week 4: Supports optional battery_voltage field
+Connected to MQTT broker.
+Subscribed to topic: iot-innovators/assets/all
+Waiting for MQTT messages...
+```
+
+When a packet arrives:
+
+```text
+MQTT Message Received
+Normalized record:
+Uploaded to Firebase successfully.
+Latest path: assets/ASSET-03/latest
+History path: assets/ASSET-03/history
+```
+
+The backend performs these actions:
+
+1. Receives JSON from MQTT.
+2. Validates required fields.
+3. Converts numeric fields.
+4. Adds dashboard-compatible aliases.
+5. Calculates battery status from voltage.
+6. Writes the latest data to Firebase.
+7. Appends the same record to Firebase history.
+
+---
+
+## Step 9 — Verify the End-to-End Data Flow
+
+At this point, all system parts should be running:
+
+```text
+Sender powered on
+Receiver connected to WiFi and MQTT
+Python backend running
+Firebase database open
+Dashboard ready
+```
+
+Check the flow in this order:
+
+1. Sender Serial Monitor shows LoRa packets being sent.
+2. Receiver Serial Monitor shows LoRa packets received.
+3. Receiver Serial Monitor shows MQTT publish successful.
+4. Python backend shows MQTT message received.
+5. Python backend shows Firebase upload successful.
+6. Firebase `assets/<deviceID>/latest` updates.
+7. Firebase `assets/<deviceID>/history` grows with new records.
+8. Dashboard displays the selected asset on the map.
+
+This order is useful for debugging because it follows the exact system pipeline.
+
+---
+
+## Step 10 — Open Dashboard V2
+
+Open the main final dashboard:
+
+```text
+dashboard/dashboard_v2.html
+```
+
+Use VS Code Live Server or another local web server.
+
+Dashboard V2 should show:
+
+- selected asset ID
+- live marker
+- latitude and longitude
+- GPS fix status
+- UTC timestamp
+- satellite count
+- HDOP
+- RSSI
+- battery voltage
+- battery status
+- geofence status
+- history trail
+- transmission health
+
+Recommended testing steps:
+
+1. Open Dashboard V2.
+2. Select `ASSET-01`, `ASSET-02`, or `ASSET-03`.
+3. Wait for Firebase data to refresh.
+4. Confirm marker appears on the map.
+5. Confirm battery voltage/status appears.
+6. Confirm history trail appears after several records.
+7. Confirm geofence status changes based on position.
+8. Confirm transmission health monitor checks packet continuity.
+
+---
+
+## Step 11 — Open the Google Maps API Dashboard
+
+Open:
+
+```text
+dashboard/dashboard_google_maps.html
+```
+
+This dashboard uses the same Firebase data as Dashboard V2 but displays it using the Google Maps JavaScript API.
+
+Before testing, replace the placeholder API key locally:
+
+```js
+const GOOGLE_MAPS_API_KEY = "ENTERHERE";
+```
+
+Replace `ENTERHERE` with a real Google Maps JavaScript API key.
+
+Important note:
+
+```text
+Do not commit a real unrestricted Google Maps API key to a public repository.
+```
+
+If the map shows a "For development purposes only" overlay, that means Google Cloud billing/prepayment is not fully active for the key. This is a Google Maps account configuration issue, not a project logic issue.
+
+Dashboard V2 with Leaflet/OpenStreetMap remains the reliable non-billing fallback for the final live demo.
+
+---
+
+## Step 12 — Perform Outdoor Hardware Testing
+
+GPS testing should be done outdoors because GPS may not get a reliable fix indoors.
+
+Outdoor testing checklist:
+
+1. Place the sender in an open-sky area.
+2. Keep the GPS patch antenna facing upward.
+3. Keep the receiver powered and connected to WiFi.
+4. Make sure both LoRa antennas are attached.
+5. Wait for a valid GPS fix.
+6. Move the sender slowly.
+7. Watch the receiver for packets.
+8. Watch Firebase for latest/history updates.
+9. Watch Dashboard V2 for marker movement and trail updates.
+
+Record these observations:
+
+- time to first GPS fix
+- satellite count
+- HDOP value
+- RSSI value
+- packet count
+- missing packet count
+- battery voltage
+- whether the asset is inside or outside the geofence
+
+---
+
+## Step 13 — Validate Week 4 Features
+
+Week 4 required polishing, testing, power behavior, and at least one additional feature.
+
+The final system validates those requirements as follows:
+
+| Week 4 Item | How It Was Implemented |
+|---|---|
+| Full-system integration | Sender → Receiver → MQTT → Python → Firebase → Dashboard |
+| Firmware polish | Final sender and receiver firmware versions added |
+| Backend polish | MQTT-to-Firebase bridge normalizes and stores records |
+| Dashboard polish | Dashboard V2 and Google Maps dashboard show live and historical data |
+| Additional feature | Transmission Health Monitor |
+| Power behavior | OLED disabled, battery/power-bank sender operation, battery voltage monitoring |
+| Demo readiness | Demo sequence and speaking roles documented |
+
+### Transmission Health Monitor
+
+The dashboard checks packet counts in Firebase history.
+
+It displays:
+
+```text
+Latest Packet
+Records Checked
+Missing Packets
+Transmission Status
+```
+
+During multi-asset switching, gaps can be expected because the sender rotates between asset IDs while the packet counter continues globally.
+
+### Battery Monitoring
+
+The sender reads battery voltage and appends it to the payload.
+
+Battery flow:
+
+```text
+Sender battery ADC
+   ↓
+LoRa payload battery_voltage
+   ↓
+Receiver MQTT JSON
+   ↓
+Python backend normalization
+   ↓
+Firebase battery_voltage + battery_status
+   ↓
+Dashboard battery display
+```
+
+Battery status logic:
+
+| Battery Voltage | Dashboard Status |
+|---:|---|
+| 4.00V and above | GOOD |
+| 3.70V to 3.99V | NORMAL |
+| 3.40V to 3.69V | LOW |
+| Below 3.40V | CRITICAL |
+
+---
+
+## Step 14 — Run the Final Demo
+
+Recommended final demo sequence:
+
+1. Show the sender hardware: TTGO + GPS + antenna + battery/power bank.
+2. Explain that the sender is GPS + LoRa only.
+3. Show the receiver hardware connected to the laptop.
+4. Explain that the receiver is LoRa + WiFi + MQTT.
+5. Start the Python backend using `python mqtt_to_firebase.py`.
+6. Show receiver Serial Monitor receiving LoRa packets.
+7. Show MQTT publish success in the receiver Serial Monitor.
+8. Show Python backend receiving MQTT data.
+9. Show Firebase latest/history updating.
+10. Open Dashboard V2.
+11. Select the active asset.
+12. Show live marker.
+13. Show historical movement trail.
+14. Show geofence circle and inside/outside status.
+15. Show battery voltage and battery status.
+16. Show transmission health monitor.
+17. Mention Google Maps dashboard as the Google Maps API version.
+18. Explain known limitations and future improvements.
+
+---
+
+## Step 15 — Common Troubleshooting
+
+### GPS Does Not Show a Valid Fix
+
+Possible causes:
+
+- GPS is indoors.
+- GPS antenna is not facing open sky.
+- GPS TXD is not connected to GPIO34.
+- GPS module does not have enough time to acquire satellites.
+
+Fixes:
+
+- Move outdoors.
+- Face the GPS antenna upward.
+- Recheck wiring.
+- Wait a few minutes for first fix.
+- Confirm Serial Monitor shows GPS characters being processed.
+
+### Receiver Does Not Receive LoRa Packets
+
+Possible causes:
+
+- Sender and receiver use different LoRa frequencies.
+- LoRa antenna is missing.
+- Sender is not powered.
+- Receiver firmware is not running.
+- Distance or obstacles are too high.
+
+Fixes:
+
+- Confirm both use `868E6`.
+- Attach antennas to both boards.
+- Check sender Serial Monitor for "LoRa Packet Sent".
+- Check receiver Serial Monitor for "Waiting for LoRa packets".
+- Test at shorter distance first.
+
+### MQTT Is Not Updating
+
+Possible causes:
+
+- Receiver WiFi credentials are wrong.
+- MQTT broker is unreachable.
+- Receiver cannot connect to WiFi.
+- Public broker is temporarily unstable.
+
+Fixes:
+
+- Update WiFi SSID/password in receiver firmware.
+- Confirm Serial Monitor says "MQTT connected".
+- Use stable WiFi.
+- Restart receiver and backend.
+
+### Firebase Is Not Updating
+
+Possible causes:
+
+- Python backend is not running.
+- Firebase URL is wrong.
+- Firebase rules block writes.
+- MQTT topic mismatch.
+
+Fixes:
+
+- Run `python mqtt_to_firebase.py`.
+- Confirm backend subscribed to `iot-innovators/assets/all`.
+- Confirm `FIREBASE_BASE_URL` is correct.
+- Temporarily use demo Firebase rules during testing.
+
+### Dashboard Is Empty
+
+Possible causes:
+
+- Firebase has no latest record.
+- Wrong asset selected.
+- Browser blocked local file requests.
+- Dashboard Firebase URL/config does not match backend database.
+
+Fixes:
+
+- Use VS Code Live Server.
+- Check Firebase `assets/<deviceID>/latest`.
+- Select the correct asset ID.
+- Confirm dashboard config points to the same Firebase database.
+
+---
+
+## Project Build Timeline
+
+The project was implemented in four stages.
+
+### Week 1 — Hardware and LoRa Foundation
+
+Main goal:
+
+```text
+GPS → Sender → LoRa → Receiver Serial Monitor
+```
+
+Completed work:
+
+- Connected NEO-6M GPS to TTGO sender.
+- Created sender firmware v1.0.
+- Created receiver firmware v1.0.
+- Defined GPS/LoRa payload format.
+- Tested LoRa transmission.
+- Documented wiring and payload format.
+
+### Week 2 — First End-to-End Software Flow
+
+Main goal:
+
+```text
+Receiver Serial Output → Python Serial Bridge → Firebase → Dashboard V1
+```
+
+Completed work:
+
+- Added `serial_to_firebase.py`.
+- Created Firebase latest/history structure.
+- Created Dashboard V1 using Leaflet/OpenStreetMap.
+- Added basic multi-asset display.
+- Tested missing GPS fix, invalid payloads, and delayed packets.
+
+### Week 3 — MQTT, Dashboard V2, Geofence, History, Google Maps
+
+Main goal:
+
+```text
+Receiver MQTT Gateway → MQTT Broker → Python MQTT Bridge → Firebase → Dashboard V2
+```
+
+Completed work:
+
+- Added No-OLED sender firmware.
+- Added receiver MQTT gateway firmware.
+- Added `mqtt_to_firebase.py`.
+- Created Dashboard V2.
+- Added history trail.
+- Added circular geofence.
+- Added Google Maps API dashboard.
+- Improved multi-asset support.
+
+### Week 4 — Final Integration, Power Behavior, and Demo Readiness
+
+Main goal:
+
+```text
+Final hardware + final firmware + final backend + final dashboards + final demo
+```
+
+Completed work:
+
+- Added final multi-asset power-tuned sender.
+- Added battery voltage monitoring.
+- Added transmission health monitor.
+- Updated backend to store battery voltage/status.
+- Updated dashboards to display battery and transmission health.
+- Added Week 4 documentation files.
+- Added final evidence screenshots.
+- Prepared final presentation and demo flow.
+
+---
+
 
 ## Final System Summary
 
