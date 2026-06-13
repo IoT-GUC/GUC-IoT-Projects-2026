@@ -72,9 +72,12 @@
                   />
                   <button
                     type="button"
-                    :disabled="loading"
+                    :disabled="loading || isScanning"
                     class="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-md transition-all duration-150 font-mono disabled:opacity-40 disabled:cursor-not-allowed"
                     @click="scanForDevice"
+                    :class="isScanning
+                      ? 'opacity-40 cursor-not-allowed'
+                      : ''"
                   >
                     Scan
                   </button>
@@ -122,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useDevices } from '../../utils/hooks/devices'
 import { serialScan } from '../../utils/serial';
 
@@ -149,6 +152,7 @@ interface FormErrors {
 
 const form = reactive<FormState>({ name: '', device_id: '' })
 const errors = reactive<FormErrors>({})
+const isScanning = ref(false)
 
 function resetForm() {
   form.name = ''
@@ -164,10 +168,12 @@ function handleClose() {
 }
 
 function scanForDevice() {
+  isScanning.value = true
+  delete errors.device_id
   serialScan().then(({ mac, status }) => {
     if (mac) form.device_id = mac
     else errors.device_id = status
-  })
+  }).finally(() => isScanning.value = false)
 }
 
 function validate(): boolean {

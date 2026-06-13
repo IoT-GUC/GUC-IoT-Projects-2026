@@ -106,10 +106,13 @@
             <!-- Submit -->
             <button
               class="mt-6 w-full py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-200"
-              :class="loading
+              :class="[loading
                 ? 'bg-blue-600/50 text-white/50 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-500 text-white active:scale-[0.98]'"
-              :disabled="loading"
+                : 'bg-blue-600 hover:bg-blue-500 text-white active:scale-[0.98]',
+                isScanning
+                ? 'opacity-40 cursor-not-allowed'
+                : '']"
+              :disabled="loading || isScanning"
               @click="handleSubmit"
             >
               <span v-if="!loading">Add User</span>
@@ -129,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { usePatients } from '../../utils/hooks/patients'
 import { useDevices } from '../../utils/hooks/devices';
 import { serialScan } from '../../utils/serial';
@@ -160,6 +163,7 @@ interface FormErrors {
 
 const form = reactive<FormState>({ name: '', device_id: '' })
 const errors = reactive<FormErrors>({})
+const isScanning = ref(false)
 
 function resetForm() {
   form.name = ''
@@ -175,15 +179,18 @@ function handleClose() {
 }
 
 function scanForDevice() {
+  isScanning.value = true
+  delete errors.device_id
   serialScan().then(({ mac, status }) => {
     if (mac) {
       const device = freeDevices.value?.find(device => device.id === mac)
       if (device) form.device_id = device.id
+      else errors.device_id = 'Device not registered or already in use.'
     }
     else {
       errors.device_id = status
     }
-  })
+  }).finally(() => isScanning.value = false)
 }
 
 function validate(): boolean {

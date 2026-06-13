@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GUC LoRa Signage Dashboard</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">NETW 1010 · Clankers</p>
+          <h1>LoRa Signage Control</h1>
+          <p class="subtitle">
+            Update either room display independently through ThingsBoard, or
+            broadcast an emergency to both e-paper displays.
+          </p>
+        </div>
+        <div class="status-card" aria-live="polite">
+          <span id="statusDot" class="status-dot"></span>
+          <div>
+            <p class="status-label">ThingsBoard Status</p>
+            <strong id="connectionStatus">Connecting...</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel compose-panel">
+        <div class="form-grid target-grid">
+          <label class="field">
+            <span>Target display</span>
+            <select id="targetInput">
+              <option>DISPLAY_1</option>
+              <option>DISPLAY_2</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Tutorial</span>
+            <input id="tutorialInput" maxlength="12" value="T01" placeholder="T01">
+          </label>
+          <label class="field">
+            <span>Course</span>
+            <input id="courseInput" maxlength="24" value="NETW 1010" placeholder="NETW 1010">
+          </label>
+          <label class="field">
+            <span>Slot</span>
+            <input id="slotInput" maxlength="20" value="First" placeholder="First">
+          </label>
+          <label class="field">
+            <span>Room</span>
+            <input id="roomInput" maxlength="16" value="301" placeholder="301">
+          </label>
+        </div>
+
+        <div class="field-head">
+          <label for="messageInput">Message</label>
+          <span id="charCount">0/100</span>
+        </div>
+        <textarea
+          id="messageInput"
+          maxlength="100"
+          rows="4"
+          placeholder="Example: Tutorial moved to C7.204"
+        ></textarea>
+
+        <div class="actions">
+          <button id="sendButton" class="primary" disabled>Send Announcement</button>
+          <button id="emergencyButton" class="danger" disabled>Emergency to All Displays</button>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>Delivery Model</h2>
+          <dl class="meta-list">
+            <div><dt>Normal</dt><dd>Selected display only</dd></div>
+            <div><dt>Emergency</dt><dd>Broadcast to both displays</dd></div>
+            <div><dt>Recovery</dt><dd>Receivers poll every 60 seconds</dd></div>
+            <div><dt>Storage</dt><dd>ThingsBoard shared attributes</dd></div>
+          </dl>
+        </article>
+
+        <article class="panel">
+          <h2>System Route</h2>
+          <dl class="meta-list">
+            <div><dt>Dashboard</dt><dd>Node REST API</dd></div>
+            <div><dt>State</dt><dd id="routeName">Checking...</dd></div>
+            <div><dt>Gateway</dt><dd>ThingsBoard MQTT</dd></div>
+            <div><dt>Displays</dt><dd>Addressed LoRa</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="panel log-panel">
+        <div class="field-head">
+          <h2>Activity Log</h2>
+          <button id="clearLogButton" class="ghost">Clear</button>
+        </div>
+        <ol id="activityLog" class="activity-log"></ol>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

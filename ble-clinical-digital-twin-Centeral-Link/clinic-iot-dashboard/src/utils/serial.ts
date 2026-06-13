@@ -7,9 +7,9 @@ declare global {
     }
 }
 
-const MIN_RSSI = Number(import.meta.env.VUE_APP_MIN_RSSI || -40); // default RSSI threshold for proximity-based patient scans
-const BAUD_RATE = Number(import.meta.env.VUE_APP_BAUD_RATE || 115200);
-const SCAN_TIMEOUT = Number(import.meta.env.VUE_APP_SCAN_TIMEOUT || 3000);
+const MIN_RSSI = Number(import.meta.env.SCAN_MIN_RSSI || -40); // default RSSI threshold for proximity-based patient scans
+const BAUD_RATE = Number(import.meta.env.SCAN_BAUD_RATE || 115200);
+const SCAN_TIMEOUT = Number(import.meta.env.SCAN_TIMEOUT || 3000);
 
 let _port: any = null;
 let _activeScanReader: any = null;
@@ -102,7 +102,7 @@ export async function serialScan() {
 
     if (found) return { mac: found, status: "ok" };
 
-    const label = "No device detected within range (~20 cm). Hold the device closer and try again."
+    const label = "No device detected within range (~3 cm). Hold the device closer and try again."
     return { mac: null, status: label };
 }
 
