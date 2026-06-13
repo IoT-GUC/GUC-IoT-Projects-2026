@@ -1,0 +1,102 @@
+{
+  "": [
+    {
+      "reading": "BOOT",
+      "conf": "1.00",
+      "status": "READY",
+      "rssi": -72,
+      "timestamp": "14:10:16"
+    },
+    {
+      "reading": "....",
+      "conf": "0.00",
+      "status": "PROCESSING",
+      "rssi": -60,
+      "timestamp": "14:12:42"
+    },
+    {
+      "reading": "038",
+      "conf": "0.75",
+      "status": "BEST_GUESS",
+      "rssi": -72,
+      "timestamp": "14:13:19"
+    },
+    {
+      "reading": "BOOT",
+      "conf": "1.00",
+      "status": "READY",
+      "rssi": -69,
+      "timestamp": "14:23:39"
+    },
+    {
+      "reading": "BOOT",
+      "conf": "1.00",
+      "status": "READY",
+      "rssi": -66,
+      "timestamp": "14:54:15"
+    },
+    {
+      "reading": "....",
+      "conf": "0.00",
+      "status": "PROCESSING",
+      "rssi": -84,
+      "timestamp": "14:54:59"
+    },
+    {
+      "reading": "322",
+      "conf": "0.34",
+      "status": "LOW_CONF",
+      "rssi": -72,
+      "timestamp": "14:55:40"
+    },
+    {
+      "reading": "BOOT",
+      "conf": "1.00",
+      "status": "READY",
+      "rssi": -80,
+      "timestamp": "15:00:59"
+    },
+    {
+      "reading": "....",
+      "conf": "0.00",
+      "status": "PROCESSING",
+      "rssi": -70,
+      "timestamp": "15:01:11"
+    },
+    {
+      "reading": "0384",
+      "conf": "0.60",
+      "status": "OK",
+      "rssi": -69,
+      "timestamp": "15:01:47"
+    },
+    {
+      "reading": "....",
+      "conf": "0.00",
+      "status": "PROCESSING",
+      "rssi": -91,
+      "timestamp": "15:04:36"
+    },
+    {
+      "reading": "----",
+      "conf": "0.00",
+      "status": "NO_DIGITS",
+      "rssi": -82,
+      "timestamp": "15:05:12"
+    },
+    {
+      "reading": "....",
+      "conf": "0.00",
+      "status": "PROCESSING",
+      "rssi": -87,
+      "timestamp": "15:05:28"
+    },
+    {
+      "reading": "----",
+      "conf": "0.00",
+      "status": "NO_DIGITS",
+      "rssi": -79,
+      "timestamp": "15:06:07"
+    }
+  ]
+}

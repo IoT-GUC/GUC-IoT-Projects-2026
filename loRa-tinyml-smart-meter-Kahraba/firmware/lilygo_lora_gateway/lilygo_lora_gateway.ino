@@ -35,14 +35,14 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 int rxCount = 0;
 
 // --- WIFI & MQTT CREDENTIALS ---
-const char* ssid = "aaaa";
-const char* password = "hossam12";
+const char* ssid = "wifi";
+const char* password = "password";
 
 // --- THINGSBOARD MQTT SETTINGS ---
-const char* mqtt_server = "10.122.219.178"; // Or your custom server IP
+const char* mqtt_server = "192.168.x.x"; // Or your custom server IP
 const int mqtt_port = 1883;
 // const char* mqtt_topic = ""; // Mandatory ThingsBoard topic
-// const char* TOKEN = "fgebr9cmx2dd79x4rljb"; // Get this from the TB Web UI
+// const char* TOKEN = ""; // Get this from the TB Web UI
 
 // Create network objects
 WiFiClient espClient;           // Handles the raw TCP/IP WiFi connection
@@ -129,25 +129,12 @@ void setup() {
   client.setServer(mqtt_server, mqtt_port);
 }
 
-// unsigned long lastSendTime = 0;
 void loop() {
   if (!client.connected()) {
     reconnectMQTT();
     return;
   }
   client.loop();
-  // unsigned long now = millis();
-  // if (now - lastSendTime >= 3000) {
-  //   lastSendTime = now;
-  //   char payload[128];
-  //   snprintf(payload, sizeof(payload),
-  //     "{\"reading\":\"123.4\",\"conf\":\"HIGH\",\"status\":\"OK\",\"rssi\":-65}");
-  //   if (client.publish("meters/test_device/data", payload)) {
-  //     Serial.println("✓ Test publish OK");
-  //   } else {
-  //     Serial.println("✗ Test publish failed");
-  //   }
-  // }
 
   int packetSize = LoRa.parsePacket();
   if (!packetSize) return;
