@@ -19,10 +19,12 @@ TinyGPSPlus gps;
 // =====================================================
 
 #define LORA_SS    18
-#define LORA_RST   14
+#define LORA_RST   23
 #define LORA_DIO0  26
 #define LORA_BAND  868E6
-
+#define SCK 5        // Serial Clock: the "metronome" for SPI data transfer
+#define MISO 19      // Master In Slave Out: data flowing FROM LoRa TO the microcontroller
+#define MOSI 27     
 // =====================================================
 // Battery Voltage Monitoring Configuration
 // =====================================================
@@ -290,6 +292,8 @@ String buildPayload(bool &fixValid, int &satCount, float &hdopValue, float &batt
 // =====================================================
 
 void setupLoRa() {
+  SPI.begin(SCK, MISO, MOSI, LORA_SS);
+
   LoRa.setPins(LORA_SS, LORA_RST, LORA_DIO0);
 
   if (!LoRa.begin(LORA_BAND)) {
